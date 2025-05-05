@@ -14,6 +14,13 @@ sap.ui.define([
 
     return Controller.extend("com.pidilite.pidilite.controller.PidiliteProject", {
         onInit: function () {
+            // Inject CSS for boldStatusText
+            const sStyle = ".boldStatusText { font-weight: bold !important; }";
+            const oStyleElement = document.createElement("style");
+            oStyleElement.type = "text/css";
+            oStyleElement.appendChild(document.createTextNode(sStyle));
+            document.head.appendChild(oStyleElement);
+
             const oData = {
                 draftCount: 0,
                 sentBackCount: 1,
@@ -102,14 +109,14 @@ sap.ui.define([
                         attachments: []
                     },
                     { 
-                        requestNo: "RM00000004,",
+                        requestNo: "RM00000004",
                         createdBy: "Buyer3",
                         createdOn: "Feb 01, 2025",
                         status: "Draft",
                         remarks: "-",
                         pendingWith: "-",
                         requestAging: "12 Days",
-                        referenceNo: "RM00000004,",
+                        referenceNo: "RM00000004",
                         division: "Division 1",
                         dcnrForm: "Form 125",
                         standardReason: "Price Update",
@@ -283,7 +290,7 @@ sap.ui.define([
                     {
                         dateTime: "7/22/2016 at 3:00 PM",
                         title: "Subham D added a note [Approved]",
-                        text: "Done.",
+                        textextend: "Done.",
                         userName: "Subham D",
                         userPicture: "https://ui-avatars.com/api/?name=SubhamD",
                         status: "Information"
@@ -580,7 +587,7 @@ sap.ui.define([
         },
 
         onRejectRequest: function() {
-            const oModel = this.getView().getModel();
+           const oModel = this.getView().getModel();
             const oSelectedRequest = oModel.getProperty("/selectedRequest");
             
             oSelectedRequest.status = "Rejected";
