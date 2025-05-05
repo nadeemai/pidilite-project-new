@@ -1,0 +1,194 @@
+/* Enter your custom styles here */
+
+.dashboardView {
+    padding: 1rem;
+}
+
+.dashboardPanel {
+    background-color: #fff;
+    border: 1px solid #d9d9d9;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.dashboardPanel .sapMPanelContent {
+    padding: 1rem;
+}
+
+.headerToolbar {
+    background-color: #3f024f !important;
+    padding: 0.5rem 1rem;
+    height: 70px !important;
+}
+
+.headerTitle {
+    color: #06e2ed !important;
+    font-size: 1.5rem;
+    font-weight: bold;
+    text-align: center;
+    flex-grow: 1;
+    margin-left: 210px;
+}
+
+.logo {
+    position: absolute;
+    left: 3rem;
+    top: 0.5rem;
+    height: 300px;
+    width: 300px;
+    object-fit:cover;
+    background:fixed;
+}
+
+.tileContainer {
+    margin-bottom: 1rem;
+    gap: 1rem;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.customTile {
+    width: 180px !important;
+    height: 100px !important;
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 0.5rem;
+}
+
+.customTile .sapMGTContent {
+    padding: 0 !important;
+    margin: 0 !important;
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.customTile .sapMNC {
+    font-size: 2rem !important;
+    font-weight: bold;
+    margin: 0 !important;
+    line-height: 1;
+}
+
+.customTile .sapMGTHeader {
+    font-size: 0.875rem !important;
+    margin-bottom: 0.25rem;
+    position: relative;
+    z-index: 1;
+}
+
+/* Tile specific styles */
+.draftTile {
+    /* background-color: #f0f0f0; */
+    border: 1px solid #6c757d;
+}
+
+.sentBackTile {
+    /* background-color: #fff3cd; */
+    border: 1px solid #ffc107;
+}
+
+.rejectedTile {
+    /* background-color: #f8d7da; */
+    border: 1px solid #dc3545;
+}
+
+.inProgressTile {
+    /* background-color: #d1e7dd; */
+    border: 1px solid #198754;
+}
+.approvedTile {
+    border: 1px solid #20011b;
+}
+
+.allTile {
+    /* background-color: #e2e3e5; */
+    border: 1px solid #6c757d;
+}
+
+.filterPanel {
+    margin: 1rem 0;
+    padding: 1rem;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+}
+
+.filterPanel .sapMInputBase {
+    margin-right: 1rem;
+}
+
+.commentText {
+    font-size: 0.875rem;
+    margin-bottom: 0.25rem;
+}
+
+.commentTimestamp {
+    font-size: 0.75rem;
+    color: #6c757d;
+}
+
+/* Status colors */
+.sapMObjStatusError {
+    color: #dc3545 !important;
+}
+
+.sapMObjStatusSuccess {
+    color: #28a745 !important;
+}
+
+.sapMObjStatusWarning {
+    color: #ffc107 !important;
+}
+
+.sapMObjStatusInformation {
+    color: #0dcaf0 !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .tileContainer {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .customTile {
+        width: 100% !important;
+    }
+    
+    .headerToolbar {
+        height: auto !important;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .logo {
+        position: relative;
+        left: 0;
+        margin-bottom: 0.5rem;
+    }
+    
+    .headerTitle {
+        margin-left: 0;
+        text-align: left;
+    }
+    
+    .filterPanel .sapMHBox {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .filterPanel .sapMInputBase {
+        margin-right: 0;
+        margin-bottom: 0.5rem;
+        width: 100%;
+    }
+}
