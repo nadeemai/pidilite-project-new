@@ -100,7 +100,8 @@
                                             <Text id="_IDGenText8" text="{createdBy}"/>
                                             <Text id="_IDGenText9" text="{createdOn}"/>
                                             <ObjectStatus id="_IDGenObjectStatus" text="{status}"
-                                                state="{= ${status} === 'Send Back' ? 'Warning' : ${status} === 'Rejected' ? 'Error' : ${status} === 'Pending Request' ? 'Information' : ${status} === 'Approved' ? 'Success' : 'None'}"/>
+                                                state="{= ${status} === 'Rejected' ? 'Error' : ${status} === 'Send Back' ? 'Warning' : ${status} === 'Approved' ? 'Success' : ${status} === 'Pending Request' ? 'Information' : 'None'}"
+                                                class="boldStatusText"/>
                                             <Text id="_IDGenText10" text="{remarks}"/>
                                             <Text id="_IDGenText11" text="{pendingWith}"/>
                                             <Text id="_IDGenText12" text="{requestAging}"/>
