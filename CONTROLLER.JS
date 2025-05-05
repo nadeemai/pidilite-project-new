@@ -12,7 +12,6 @@ sap.ui.define([
 ], function (Controller, MessageBox, MessageToast, JSONModel, Filter, FilterOperator, DateFormat, History, UIComponent, coreLibrary) {
     "use strict";
 
-
     return Controller.extend("com.pidilite.pidilite.controller.PidiliteProject", {
         onInit: function () {
             const oData = {
