@@ -1,19 +1,63 @@
 sap.ui.define([
     "sap/ui/core/mvc/Controller",
+    "sap/m/MessageBox",
     "sap/m/MessageToast",
     "sap/ui/model/json/JSONModel",
+    "sap/ui/model/Filter",
+    "sap/ui/model/FilterOperator",
+    "sap/ui/core/format/DateFormat",
     "sap/ui/core/routing/History",
     "sap/ui/core/Fragment",
-    "sap/ui/core/UIComponent"
-], function (Controller, MessageToast, JSONModel, History, Fragment, UIComponent) {
+    "sap/ui/core/UIComponent",
+    "sap/ui/core/library"
+], function (Controller, MessageBox, MessageToast, JSONModel, Filter, FilterOperator, DateFormat, History, Fragment, UIComponent, coreLibrary) {
     "use strict";
 
     return Controller.extend("com.pidilite.pidilite.controller.RequestDetails", {
         onInit: function () {
-            // Initialize the model with provided data
+            // Inject CSS for boldStatusText
+            const sStyle = ".boldStatusText { font-weight: bold !important; }";
+            const oStyleElement = document.createElement("style");
+            oStyleElement.type = "text/css";
+            oStyleElement.appendChild(document.createTextNode(sStyle));
+            document.head.appendChild(oStyleElement);
+
+            // Initialize component model
             const oData = {
+                draftCount: 0,
+                sentBackCount: 0,
+                rejectedCount: 0,
+                inProgressCount: 0,
+                approvedCount: 0,
+                allCount: 0,
+                filter: {
+                    requestNo: "",
+                    createdBy: "",
+                    createdOn: "",
+                    status: ""
+                },
+                statusItems: [
+                    { key: "", text: "All" },
+                    { key: "Draft", text: "Draft" },
+                    { key: "Send Back", text: "Send Back" },
+                    { key: "Rejected", text: "Rejected" },
+                    { key: "Pending Request", text: "Pending Request" },
+                    { key: "Approved", text: "Approved" }
+                ],
+                requestTypes: [
+                    { key: "TYPE1", text: "Type 1 Request" },
+                    { key: "TYPE2", text: "Type 2 Request" },
+                    { key: "TYPE3", text: "Type 3 Request" }
+                ],
+                newRequest: {
+                    type: "",
+                    description: "",
+                    file: null
+                },
+                uploadedFiles: [],
+                uploadedFilesCount: 0,
                 requests: [
-                    { 
+                    {
                         requestNo: "RM00000001",
                         createdBy: "Buyer1",
                         createdOn: "Feb 02, 2025",
@@ -30,7 +74,7 @@ sap.ui.define([
                         dcnrTo: "Finance",
                         attachments: []
                     },
-                    { 
+                    {
                         requestNo: "RM00000002",
                         createdBy: "Buyer2",
                         createdOn: "Feb 03, 2025",
@@ -47,7 +91,7 @@ sap.ui.define([
                         dcnrTo: "Finance",
                         attachments: []
                     },
-                    { 
+                    {
                         requestNo: "RM00000003",
                         createdBy: "Buyer3",
                         createdOn: "Feb 01, 2025",
@@ -64,7 +108,7 @@ sap.ui.define([
                         dcnrTo: "Finance",
                         attachments: []
                     },
-                    { 
+                    {
                         requestNo: "RM00000004",
                         createdBy: "Buyer3",
                         createdOn: "Feb 01, 2025",
@@ -81,7 +125,7 @@ sap.ui.define([
                         dcnrTo: "Finance",
                         attachments: []
                     },
-                    { 
+                    {
                         requestNo: "RM00000005",
                         createdBy: "Buyer4",
                         createdOn: "Feb 04, 2025",
@@ -91,14 +135,14 @@ sap.ui.define([
                         requestAging: "5 Days",
                         referenceNo: "RM00000005",
                         division: "Division 3",
-                        dcnrForm: "Form  aggiornamento",
+                        dcnrForm: "Form 126",
                         standardReason: "Price Correction",
                         salesGroup: "Group C",
                         creatorComment: "Sent back for updates",
                         dcnrTo: "Finance",
                         attachments: []
                     },
-                    { 
+                    {
                         requestNo: "RM00000006",
                         createdBy: "Buyer4",
                         createdOn: "Feb 04, 2025",
@@ -115,7 +159,7 @@ sap.ui.define([
                         dcnrTo: "Finance",
                         attachments: []
                     },
-                    { 
+                    {
                         requestNo: "RM00000007",
                         createdBy: "Buyer5",
                         createdOn: "Jan 30, 2025",
@@ -132,7 +176,7 @@ sap.ui.define([
                         dcnrTo: "Finance",
                         attachments: []
                     },
-                    { 
+                    {
                         requestNo: "RM00000008",
                         createdBy: "Buyer5",
                         createdOn: "Jan 30, 2025",
@@ -199,8 +243,8 @@ sap.ui.define([
                         dateTime: "7/22/2016 at 3:00 PM",
                         title: "Vikrant SIr Created a Request",
                         text: "PLEASE go through and evaluate.",
-                        userName: "Virkrant SIr",
-                        userPicture: "https://ui-avatars.com/api/?name=VikranSir",
+                        userName: "Vikrant SIr",
+                        userPicture: "https://ui-avatars.com/api/?name=VikrantSIr",
                         status: "Information"
                     },
                     {
@@ -256,7 +300,7 @@ sap.ui.define([
                         title: "Yugal Sir added a note [APPROVED]",
                         text: "ok",
                         userName: "Yugal Sir",
-                        userPicture: "https://ui-avatars.com/api/?name=Yugal",
+                        userPicture: "https://ui-avatars.com/api/?name=YugalSir",
                         status: "Information"
                     },
                     {
@@ -264,23 +308,23 @@ sap.ui.define([
                         title: "Suraj Sir added a note [APPROVED]",
                         text: "ok",
                         userName: "Suraj Sir",
-                        userPicture: "https://ui-avatars.com/api/?name=Suraj",
+                        userPicture: "https://ui-avatars.com/api/?name=SurajSir",
                         status: "Information"
                     },
                     {
                         dateTime: "7/22/2016 at 3:00 PM",
                         title: "Ravindra Kumar added a note [APPROVED]",
                         text: "ok",
-                        userName: "Ravindra Kumar Sir",
-                        userPicture: "https://ui-avatars.com/api/?name=Ravindra",
+                        userName: "Ravindra Kumar",
+                        userPicture: "https://ui-avatars.com/api/?name=RavindraKumar",
                         status: "Information"
                     },
                     {
                         dateTime: "7/22/2016 at 3:00 PM",
                         title: "Vikash Sir added a note [APPROVED]",
                         text: "ok",
-                        userName: "Vikash Sir Sir",
-                        userPicture: "https://ui-avatars.com/api/?name=Vikash",
+                        userName: "Vikash Sir",
+                        userPicture: "https://ui-avatars.com/api/?name=VikashSir",
                         status: "Information"
                     }
                 ],
@@ -302,7 +346,7 @@ sap.ui.define([
                         uom: "EA",
                         indicativeMRP: "41.00",
                         startDate: "18-05-2025",
-                        endDate: "4-07-2025",
+                        endDate: "04-07-2025",
                         defaultPrice: "X"
                     },
                     {
@@ -312,7 +356,7 @@ sap.ui.define([
                         uom: "EA",
                         indicativeMRP: "42.00",
                         startDate: "23-05-2025",
-                        endDate: "2-07-2025",
+                        endDate: "02-07-2025",
                         defaultPrice: "X"
                     },
                     {
@@ -321,33 +365,51 @@ sap.ui.define([
                         priceListDescription: "Price Lot 04",
                         uom: "EA",
                         indicativeMRP: "71.09",
-                        startDate: "3-05-2025",
+                        startDate: "03-05-2025",
                         endDate: "11-07-2025",
                         defaultPrice: "X"
                     }
                 ],
                 microProcessItems: [
-                    { 
-                        state: "Success", 
-                        text: "③",
+                    {
+                        state: "Success",
+                        text: "①",
                         tooltip: "Step 1: Request Created"
                     },
-                    { 
-                        state: "Success", 
-                        text: "④",
+                    {
+                        state: "Warning",
+                        text: "②",
                         tooltip: "Step 2: First Approval"
                     },
-                    { 
-                        state: "Success", 
-                        text: "⑤",
+                    {
+                        state: "Error",
+                        text: "③",
                         tooltip: "Step 3: Final Approval"
                     }
-                ],
-                selectedRequest: {}
+                ]
             };
 
-            const oModel = new JSONModel(oData);
-            this.getView().setModel(oModel);
+            const oComponentModel = new JSONModel(oData);
+            this.getOwnerComponent().setModel(oComponentModel);
+
+            // Initialize view model
+            const oViewModel = new JSONModel({
+                request: {},
+                priceDetails: [],
+                timelineItems: [],
+                microProcessItems: [],
+                newRequest: {
+                    type: "",
+                    description: "",
+                    file: null
+                },
+                uploadedFiles: [],
+                uploadedFilesCount: 0,
+                editable: true
+            });
+            this.getView().setModel(oViewModel, "viewModel");
+
+            // Update counts and initialize micro process flow
             this._updateCounts();
             this._initMicroProcessFlow();
 
@@ -359,49 +421,115 @@ sap.ui.define([
             return UIComponent.getRouterFor(this);
         },
 
-        _initMicroProcessFlow: function() {
+        _initMicroProcessFlow: function () {
             const oMicroProcessFlow = this.byId("microProcessFlow");
             if (oMicroProcessFlow) {
                 const aItems = oMicroProcessFlow.getContent();
-                aItems.forEach(function(oItem) {
+                aItems.forEach(function (oItem) {
                     oItem.addStyleClass("customProcessStep");
                 });
             }
         },
 
-        _updateCounts: function() {
-            const oModel = this.getView().getModel();
-            const aRequests = oModel.getProperty("/requests");
-            
+        _updateCounts: function () {
+            const oComponentModel = this.getOwnerComponent().getModel();
+            const aRequests = oComponentModel.getProperty("/requests") || [];
+
             const oCounts = {
-                pending: aRequests.filter(req => req.status === "Pending Request").length,
-                draft: aRequests.filter(req => req.status === "Draft").length,
-                sendBack: aRequests.filter(req => req.status === "Send Back").length,
-                rejected: aRequests.filter(req => req.status === "Rejected").length
+                draftCount: aRequests.filter(r => r.status === "Draft").length,
+                sentBackCount: aRequests.filter(r => r.status === "Send Back").length,
+                rejectedCount: aRequests.filter(r => r.status === "Rejected").length,
+                inProgressCount: aRequests.filter(r => r.status === "Pending Request").length,
+                approvedCount: aRequests.filter(r => r.status === "Approved").length,
+                allCount: aRequests.length
             };
-            
-            oModel.setProperty("/counts", oCounts);
+
+            oComponentModel.setProperty("/draftCount", oCounts.draftCount);
+            oComponentModel.setProperty("/sentBackCount", oCounts.sentBackCount);
+            oComponentModel.setProperty("/rejectedCount", oCounts.rejectedCount);
+            oComponentModel.setProperty("/inProgressCount", oCounts.inProgressCount);
+            oComponentModel.setProperty("/approvedCount", oCounts.approvedCount);
+            oComponentModel.setProperty("/allCount", oCounts.allCount);
+        },
+
+        _addTimelineItem: function (sAction, sStatus) {
+            const oComponentModel = this.getOwnerComponent().getModel();
+            const aTimelineItems = oComponentModel.getProperty("/timelineItems") || [];
+            const oDateFormat = DateFormat.getDateTimeInstance({ style: "medium" });
+            const sCurrentDateTime = oDateFormat.format(new Date());
+            const sUserName = "Current User"; // Replace with actual user name in a real app
+
+            const oNewTimelineItem = {
+                dateTime: sCurrentDateTime,
+                title: `${sUserName} ${sAction} the Request [${sStatus.toUpperCase()}]`,
+                text: `Request ${sStatus.toLowerCase()} by ${sUserName}.`,
+                userName: sUserName,
+                userPicture: `https://ui-avatars.com/api/?name=${sUserName.replace(/\s+/g, '+')}`,
+                status: "Information"
+            };
+
+            aTimelineItems.unshift(oNewTimelineItem);
+            oComponentModel.setProperty("/timelineItems", aTimelineItems);
+
+            // Update view model
+            const oViewModel = this.getView().getModel("viewModel");
+            oViewModel.setProperty("/timelineItems", aTimelineItems);
+        },
+
+        _updateMicroProcessFlow: function (sStatus) {
+            const oComponentModel = this.getOwnerComponent().getModel();
+            let aMicroProcessItems = oComponentModel.getProperty("/microProcessItems") || [];
+
+            // Update micro process items based on status
+            aMicroProcessItems = aMicroProcessItems.map((item, index) => {
+                if (sStatus === "Draft" && index === 0) {
+                    return { ...item, state: "Success" };
+                } else if (sStatus === "Pending Request" && index <= 1) {
+                    return { ...item, state: "Success" };
+                } else if (sStatus === "Approved" && index <= 2) {
+                    return { ...item, state: "Success" };
+                } else if (sStatus === "Send Back" && index === 1) {
+                    return { ...item, state: "Warning" };
+                } else if (sStatus === "Rejected" && index === 1) {
+                    return { ...item, state: "Error" };
+                }
+                return item;
+            });
+
+            oComponentModel.setProperty("/microProcessItems", aMicroProcessItems);
+            const oViewModel = this.getView().getModel("viewModel");
+            oViewModel.setProperty("/microProcessItems", aMicroProcessItems);
         },
 
         _onRouteMatched: function (oEvent) {
             const sRequestNo = oEvent.getParameter("arguments").requestNo;
-            const oModel = this.getOwnerComponent().getModel();
-            const aRequests = oModel.getProperty("/requests");
+            const oComponentModel = this.getOwnerComponent().getModel();
+
+            if (!oComponentModel) {
+                MessageToast.show("Component model not found");
+                this.onNavBack();
+                return;
+            }
+
+            const aRequests = oComponentModel.getProperty("/requests") || [];
             const oRequest = aRequests.find(req => req.requestNo === sRequestNo);
 
             if (oRequest) {
-                const aPriceDetails = oModel.getProperty("/priceDetails");
-                const aTimelineItems = oModel.getProperty("/timelineItems");
+                const aPriceDetails = oComponentModel.getProperty("/priceDetails") || [];
+                const aTimelineItems = oComponentModel.getProperty("/timelineItems") || [];
+                const aMicroProcessItems = oComponentModel.getProperty("/microProcessItems") || [];
 
-                const oViewModel = new JSONModel({
-                    request: oRequest,
-                    priceDetails: aPriceDetails,
-                    timelineItems: aTimelineItems,
-                    editable: true
-                });
-                this.getView().setModel(oViewModel);
+                const oViewModel = this.getView().getModel("viewModel");
+                oViewModel.setProperty("/request", { ...oRequest });
+                oViewModel.setProperty("/priceDetails", aPriceDetails);
+                oViewModel.setProperty("/timelineItems", aTimelineItems);
+                oViewModel.setProperty("/microProcessItems", aMicroProcessItems);
+                oViewModel.setProperty("/editable", true);
+
+                // Update micro process flow based on request status
+                this._updateMicroProcessFlow(oRequest.status);
             } else {
-                MessageToast.show("Request not found");
+                MessageToast.show(`Request ${sRequestNo} not found`);
                 this.onNavBack();
             }
         },
@@ -417,83 +545,249 @@ sap.ui.define([
             }
         },
 
-        onSaveRequest: function () {
-            const oModel = this.getView().getModel();
-            const oRequest = oModel.getProperty("/request");
+        onCreatePress: function () {
+            const oViewModel = this.getView().getModel("viewModel");
+            oViewModel.setProperty("/newRequest", {
+                type: "",
+                description: "",
+                file: null
+            });
+            oViewModel.setProperty("/uploadedFiles", []);
+            oViewModel.setProperty("/uploadedFilesCount", 0);
+            this.byId("createRequestDialog").open();
+        },
+
+        onCreateRequest: function () {
+            const oViewModel = this.getView().getModel("viewModel");
+            const oNewRequest = oViewModel.getProperty("/newRequest");
+            const aUploadedFiles = oViewModel.getProperty("/uploadedFiles");
+
+            if (aUploadedFiles.length === 0) {
+                MessageBox.error("Please upload at least one file before creating the request.");
+                return;
+            }
+
             const oComponentModel = this.getOwnerComponent().getModel();
             const aRequests = oComponentModel.getProperty("/requests");
+            const iNewId = aRequests.length + 1;
+            const sNewRequestNo = "RM" + String(iNewId).padStart(7, "0");
+
+            const oDateFormat = DateFormat.getDateInstance({ style: "medium" });
+            const sCurrentDate = oDateFormat.format(new Date());
+
+            const oRequest = {
+                requestNo: sNewRequestNo,
+                createdBy: "Current User",
+                createdOn: sCurrentDate,
+                status: "Draft",
+                remarks: oNewRequest.description || "-",
+                pendingWith: "-",
+                requestAging: "0 Days",
+                referenceNo: sNewRequestNo,
+                division: "",
+                dcnrForm: "",
+                standardReason: "",
+                salesGroup: "",
+                creatorComment: "",
+                dcnrTo: "",
+                attachments: aUploadedFiles.map(file => ({ fileName: file.fileName }))
+            };
+
+            aRequests.unshift(oRequest);
+            oComponentModel.setProperty("/requests", aRequests);
+
+            this._updateCounts();
+            this._addTimelineItem("Created", "Draft");
+
+            this.byId("createRequestDialog").close();
+            MessageToast.show("Request created successfully");
+
+            this.getRouter().navTo("requestDetails", {
+                requestNo: sNewRequestNo
+            });
+        },
+
+        onCancelCreate: function () {
+            this.byId("createRequestDialog").close();
+        },
+
+        onSaveRequest: function () {
+            const oViewModel = this.getView().getModel("viewModel");
+            const oRequest = oViewModel.getProperty("/request");
+
+            // Validate mandatory fields
+            if (!oRequest.referenceNo || !oRequest.division) {
+                MessageBox.error("Please fill all mandatory fields: Reference No and Division.");
+                return;
+            }
+
+            const oComponentModel = this.getOwnerComponent().getModel();
+            const aRequests = oComponentModel.getProperty("/requests") || [];
             const iIndex = aRequests.findIndex(req => req.requestNo === oRequest.requestNo);
 
             if (iIndex >= 0) {
-                aRequests[iIndex] = oRequest;
+                aRequests[iIndex] = { ...aRequests[iIndex], ...oRequest };
                 oComponentModel.setProperty("/requests", aRequests);
+                this._updateCounts();
+                this._addTimelineItem("Updated", "Saved");
                 MessageToast.show("Request saved successfully");
             } else {
-                MessageToast.show("Error saving request");
+                MessageBox.error("Error saving request: Request not found");
             }
         },
 
-        onSendBackRequest: function() {
-            const oModel = this.getView().getModel();
-            const oRequest = oModel.getProperty("/request");
+        onSendBackRequest: function () {
+            const oViewModel = this.getView().getModel("viewModel");
+            const oRequest = oViewModel.getProperty("/request");
             const oComponentModel = this.getOwnerComponent().getModel();
-            const aRequests = oComponentModel.getProperty("/requests");
+            const aRequests = oComponentModel.getProperty("/requests") || [];
             const iIndex = aRequests.findIndex(req => req.requestNo === oRequest.requestNo);
 
             if (iIndex >= 0) {
-                aRequests[iIndex].status = "Send Back";
-                aRequests[iIndex].pendingWith = "";
+                aRequests[iIndex] = {
+                    ...aRequests[iIndex],
+                    status: "Send Back",
+                    pendingWith: oRequest.createdBy,
+                    remarks: "Sent back for revision"
+                };
                 oComponentModel.setProperty("/requests", aRequests);
+                this._updateCounts();
+                this._addTimelineItem("Sent Back", "Send Back");
+                this._updateMicroProcessFlow("Send Back");
                 MessageToast.show("Request sent back successfully");
                 this.onNavBack();
             } else {
-                MessageToast.show("Error sending back request");
+                MessageBox.error("Error sending back request: Request not found");
             }
         },
 
-        onRejectRequest: function() {
-            const oModel = this.getView().getModel();
-            const oRequest = oModel.getProperty("/request");
+        onRejectRequest: function () {
+            const oViewModel = this.getView().getModel("viewModel");
+            const oRequest = oViewModel.getProperty("/request");
             const oComponentModel = this.getOwnerComponent().getModel();
-            const aRequests = oComponentModel.getProperty("/requests");
+            const aRequests = oComponentModel.getProperty("/requests") || [];
             const iIndex = aRequests.findIndex(req => req.requestNo === oRequest.requestNo);
 
             if (iIndex >= 0) {
-                aRequests[iIndex].status = "Rejected";
-                aRequests[iIndex].pendingWith = "";
+                aRequests[iIndex] = {
+                    ...aRequests[iIndex],
+                    status: "Rejected",
+                    pendingWith: "",
+                    remarks: "Request rejected"
+                };
                 oComponentModel.setProperty("/requests", aRequests);
+                this._updateCounts();
+                this._addTimelineItem("Rejected", "Rejected");
+                this._updateMicroProcessFlow("Rejected");
                 MessageToast.show("Request rejected successfully");
                 this.onNavBack();
             } else {
-                MessageToast.show("Error rejecting request");
+                MessageBox.error("Error rejecting request: Request not found");
             }
         },
 
-        onApproveRequest: function() {
-            const oModel = this.getView().getModel();
-            const oRequest = oModel.getProperty("/request");
+        onApproveRequest: function () {
+            const oViewModel = this.getView().getModel("viewModel");
+            const oRequest = oViewModel.getProperty("/request");
             const oComponentModel = this.getOwnerComponent().getModel();
-            const aRequests = oComponentModel.getProperty("/requests");
+            const aRequests = oComponentModel.getProperty("/requests") || [];
             const iIndex = aRequests.findIndex(req => req.requestNo === oRequest.requestNo);
 
             if (iIndex >= 0) {
-                aRequests[iIndex].status = "Approved";
-                aRequests[iIndex].pendingWith = "";
+                aRequests[iIndex] = {
+                    ...aRequests[iIndex],
+                    status: "Approved",
+                    pendingWith: "",
+                    remarks: "Request approved"
+                };
                 oComponentModel.setProperty("/requests", aRequests);
+                this._updateCounts();
+                this._addTimelineItem("Approved", "Approved");
+                this._updateMicroProcessFlow("Approved");
                 MessageToast.show("Request approved successfully");
                 this.onNavBack();
             } else {
-                MessageToast.show("Error approving request");
+                MessageBox.error("Error approving request: Request not found");
             }
+        },
+
+        handleUploadComplete: function (oEvent) {
+            const sResponse = oEvent.getParameters().response;
+            const iHttpStatusCode = parseInt(/\d{3}/.exec(sResponse) ? /\d{3}/.exec(sResponse)[0] : 0);
+            const sMessage = iHttpStatusCode === 200 ? "File upload complete (Success)" : "File upload failed (Error)";
+            MessageToast.show(sMessage);
+        },
+
+        handleValueChange: function (oEvent) {
+            const sFileName = oEvent.getParameter("newValue");
+            const oViewModel = this.getView().getModel("viewModel");
+            const aUploadedFiles = oViewModel.getProperty("/uploadedFiles");
+            aUploadedFiles.push({ fileName: sFileName });
+            oViewModel.setProperty("/uploadedFiles", aUploadedFiles);
+            oViewModel.setProperty("/uploadedFilesCount", aUploadedFiles.length);
+            MessageToast.show("File selected: " + sFileName);
+        },
+
+        onDownloadFile: function (oEvent) {
+            const oItem = oEvent.getSource().getBindingContext("viewModel").getObject();
+            MessageToast.show("Downloading file: " + oItem.fileName);
+        },
+
+        handleTypeMissmatch: function (oEvent) {
+            const aFileTypes = oEvent.getSource().getFileType().map(sType => "*." + sType);
+            MessageToast.show(`The file type *.${oEvent.getParameter("fileType")} is not supported. Choose one of the following types: ${aFileTypes.join(", ")}`);
         },
 
         onDetailsTabSelect: function (oEvent) {
             const sKey = oEvent.getParameter("key");
-            MessageToast.show(`Selected details tab: ${sKey}`);
+            const oViewModel = this.getView().getModel("viewModel");
+            const oComponentModel = this.getOwnerComponent().getModel();
+
+            if (sKey === "priceDetails") {
+                oViewModel.setProperty("/priceDetails", oComponentModel.getProperty("/priceDetails") || []);
+            } else if (sKey === "timeline") {
+                oViewModel.setProperty("/timelineItems", oComponentModel.getProperty("/timelineItems") || []);
+            }
+
+            MessageToast.show(`Selected tab: ${sKey}`);
         },
 
-        onMicroProcessItemPress: function(oEvent) {
-            MessageToast.show("Micro process item pressed");
+        onMicroProcessItemPress: function (oEvent) {
+            const oItem = oEvent.getSource();
+            const sTooltip = oItem.getTooltip();
+
+            if (!this._oOrderStatusDialog) {
+                Fragment.load({
+                    id: this.getView().getId(),
+                    name: "com.pidilite.pidilite.view.OrderStatusDialog",
+                    controller: this
+                }).then(oDialog => {
+                    this._oOrderStatusDialog = oDialog;
+                    this.getView().addDependent(this._oOrderStatusDialog);
+                    this._updateOrderStatusDialog(sTooltip);
+                    this._oOrderStatusDialog.open();
+                }).catch(() => {
+                    MessageBox.error("Error loading dialog");
+                });
+            } else {
+                this._updateOrderStatusDialog(sTooltip);
+                this._oOrderStatusDialog.open();
+            }
+        },
+
+        _updateOrderStatusDialog: function (sTooltip) {
+            if (this._oOrderStatusDialog) {
+                const oTitle = this._oOrderStatusDialog.getContent()[0].getItems()[0].getItems()[1];
+                const oText = this._oOrderStatusDialog.getContent()[0].getItems()[1];
+                oTitle.setText(sTooltip);
+                oText.setText(`Details for ${sTooltip}`);
+            }
+        },
+
+        onCloseOrderStatus: function () {
+            if (this._oOrderStatusDialog) {
+                this._oOrderStatusDialog.close();
+            }
         }
     });
 });
