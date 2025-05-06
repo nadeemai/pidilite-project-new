@@ -3,81 +3,174 @@ sap.ui.define([
     "sap/m/MessageToast",
     "sap/ui/model/json/JSONModel",
     "sap/ui/core/routing/History",
+    "sap/ui/core/Fragment",
     "sap/ui/core/UIComponent"
-], function (Controller, MessageToast, JSONModel, History, UIComponent) {
+], function (Controller, MessageToast, JSONModel, History, Fragment, UIComponent) {
     "use strict";
 
     return Controller.extend("com.pidilite.pidilite.controller.RequestDetails", {
         onInit: function () {
-            this.getRouter().getRoute("requestDetails").attachPatternMatched(this._onRouteMatched, this);
-            this._initMicroProcessFlow();
-        },
-
-        getRouter: function () {
-            return UIComponent.getRouterFor(this);
-        },
-
-        _initMicroProcessFlow: function() {
-            const oMicroProcessFlow = this.byId("microProcessFlow");
-            if (oMicroProcessFlow) {
-                const aItems = oMicroProcessFlow.getContent();
-                aItems.forEach(function(oItem) {
-                    oItem.addStyleClass("customProcessStep");
-                });
-            }
-        },
-
-        _onRouteMatched: function (oEvent) {
-            const sRequestNo = oEvent.getParameter("arguments").requestNo;
-            const oModel = this.getOwnerComponent().getModel();
-            const aRequests = oModel.getProperty("/requests");
-            const oRequest = aRequests.find(req => req.requestNo === sRequestNo);
-
-            if (oRequest) {
-                const aPriceDetails = [
-                    {
-                        material: "FC88B7866",
-                        priceList: "04",
-                        priceListDescription: "Price Lot 04",
-                        uom: "EA",
-                        indicativeMRP: "41.00",
-                        startDate: "13-05-2025",
-                        endDate: "24-07-2025",
-                        defaultPrice: "X"
+            // Initialize the model with provided data
+            const oData = {
+                requests: [
+                    { 
+                        requestNo: "RM00000001",
+                        createdBy: "Buyer1",
+                        createdOn: "Feb 02, 2025",
+                        status: "Pending Request",
+                        remarks: "Awaiting approval",
+                        pendingWith: "Manager1",
+                        requestAging: "10 Days",
+                        referenceNo: "RM00000001",
+                        division: "Division 1",
+                        dcnrForm: "Form 123",
+                        standardReason: "Price Adjustment",
+                        salesGroup: "Group A",
+                        creatorComment: "Urgent request",
+                        dcnrTo: "Finance",
+                        attachments: []
                     },
-                    {
-                        material: "FC88B7866",
-                        priceList: "04",
-                        priceListDescription: "Price Lot 04",
-                        uom: "EA",
-                        indicativeMRP: "41.00",
-                        startDate: "18-05-2025",
-                        endDate: "4-07-2025",
-                        defaultPrice: "X"
+                    { 
+                        requestNo: "RM00000002",
+                        createdBy: "Buyer2",
+                        createdOn: "Feb 03, 2025",
+                        status: "Pending Request",
+                        remarks: "Under review",
+                        pendingWith: "Manager2",
+                        requestAging: "8 Days",
+                        referenceNo: "RM00000002",
+                        division: "Division 2",
+                        dcnrForm: "Form 124",
+                        standardReason: "Price Change",
+                        salesGroup: "Group B",
+                        creatorComment: "Needs quick approval",
+                        dcnrTo: "Finance",
+                        attachments: []
                     },
-                    {
-                        material: "FC88B7866",
-                        priceList: "04",
-                        priceListDescription: "Price Lot 04",
-                        uom: "EA",
-                        indicativeMRP: "42.00",
-                        startDate: "23-05-2025",
-                        endDate: "2-07-2025",
-                        defaultPrice: "X"
+                    { 
+                        requestNo: "RM00000003",
+                        createdBy: "Buyer3",
+                        createdOn: "Feb 01, 2025",
+                        status: "Draft",
+                        remarks: "-",
+                        pendingWith: "-",
+                        requestAging: "12 Days",
+                        referenceNo: "RM00000003",
+                        division: "Division 1",
+                        dcnrForm: "Form 125",
+                        standardReason: "Price Update",
+                        salesGroup: "Group A",
+                        creatorComment: "Draft in progress",
+                        dcnrTo: "Finance",
+                        attachments: []
                     },
-                    {
-                        material: "FC88B7866",
-                        priceList: "04",
-                        priceListDescription: "Price Lot 04",
-                        uom: "EA",
-                        indicativeMRP: "71.09",
-                        startDate: "3-05-2025",
-                        endDate: "11-07-2025",
-                        defaultPrice: "X"
+                    { 
+                        requestNo: "RM00000004",
+                        createdBy: "Buyer3",
+                        createdOn: "Feb 01, 2025",
+                        status: "Draft",
+                        remarks: "-",
+                        pendingWith: "-",
+                        requestAging: "12 Days",
+                        referenceNo: "RM00000004",
+                        division: "Division 1",
+                        dcnrForm: "Form 125",
+                        standardReason: "Price Update",
+                        salesGroup: "Group A",
+                        creatorComment: "Draft in progress",
+                        dcnrTo: "Finance",
+                        attachments: []
+                    },
+                    { 
+                        requestNo: "RM00000005",
+                        createdBy: "Buyer4",
+                        createdOn: "Feb 04, 2025",
+                        status: "Send Back",
+                        remarks: "Needs revision",
+                        pendingWith: "Buyer4",
+                        requestAging: "5 Days",
+                        referenceNo: "RM00000005",
+                        division: "Division 3",
+                        dcnrForm: "Form  aggiornamento",
+                        standardReason: "Price Correction",
+                        salesGroup: "Group C",
+                        creatorComment: "Sent back for updates",
+                        dcnrTo: "Finance",
+                        attachments: []
+                    },
+                    { 
+                        requestNo: "RM00000006",
+                        createdBy: "Buyer4",
+                        createdOn: "Feb 04, 2025",
+                        status: "Send Back",
+                        remarks: "Needs revision",
+                        pendingWith: "Buyer4",
+                        requestAging: "5 Days",
+                        referenceNo: "RM00000006",
+                        division: "Division 3",
+                        dcnrForm: "Form 126",
+                        standardReason: "Price Correction",
+                        salesGroup: "Group C",
+                        creatorComment: "Sent back for updates",
+                        dcnrTo: "Finance",
+                        attachments: []
+                    },
+                    { 
+                        requestNo: "RM00000007",
+                        createdBy: "Buyer5",
+                        createdOn: "Jan 30, 2025",
+                        status: "Rejected",
+                        remarks: "Invalid data",
+                        pendingWith: "-",
+                        requestAging: "15 Days",
+                        referenceNo: "RM00000007",
+                        division: "Division 2",
+                        dcnrForm: "Form 127",
+                        standardReason: "Price Change",
+                        salesGroup: "Group B",
+                        creatorComment: "Request rejected",
+                        dcnrTo: "Finance",
+                        attachments: []
+                    },
+                    { 
+                        requestNo: "RM00000008",
+                        createdBy: "Buyer5",
+                        createdOn: "Jan 30, 2025",
+                        status: "Rejected",
+                        remarks: "Invalid data",
+                        pendingWith: "-",
+                        requestAging: "15 Days",
+                        referenceNo: "RM00000008",
+                        division: "Division 2",
+                        dcnrForm: "Form 127",
+                        standardReason: "Price Change",
+                        salesGroup: "Group B",
+                        creatorComment: "Request rejected",
+                        dcnrTo: "Finance",
+                        attachments: []
                     }
-                ];
-
-                const aTimelineItems = [
+                ],
+                approvers: [
+                    {
+                        role1: "Approver 1",
+                        approver1: "ayush.jha@sumo",
+                        role2: "Alternate Approver 1",
+                        approver2: "tani.singh@sumo"
+                    },
+                    {
+                        role1: "Approver 2",
+                        approver1: "ayushi.khanolkar@sumo",
+                        role2: "Alternate Approver 2",
+                        approver2: "aakib.mohd@sumo"
+                    },
+                    {
+                        role1: "Approver 3",
+                        approver1: "yugal.kishore@sumo",
+                        role2: "Alternate Approver 3",
+                        approver2: "sumit.jhadjiyal@sumo"
+                    }
+                ],
+                timelineItems: [
                     {
                         dateTime: "7/22/2016 at 3:00 PM",
                         title: "Pushpak Jha Sir Created a Request",
@@ -190,12 +283,121 @@ sap.ui.define([
                         userPicture: "https://ui-avatars.com/api/?name=Vikash",
                         status: "Information"
                     }
-                ];
+                ],
+                priceDetails: [
+                    {
+                        material: "FC88B7866",
+                        priceList: "04",
+                        priceListDescription: "Price Lot 04",
+                        uom: "EA",
+                        indicativeMRP: "41.00",
+                        startDate: "13-05-2025",
+                        endDate: "24-07-2025",
+                        defaultPrice: "X"
+                    },
+                    {
+                        material: "FC88B7866",
+                        priceList: "04",
+                        priceListDescription: "Price Lot 04",
+                        uom: "EA",
+                        indicativeMRP: "41.00",
+                        startDate: "18-05-2025",
+                        endDate: "4-07-2025",
+                        defaultPrice: "X"
+                    },
+                    {
+                        material: "FC88B7866",
+                        priceList: "04",
+                        priceListDescription: "Price Lot 04",
+                        uom: "EA",
+                        indicativeMRP: "42.00",
+                        startDate: "23-05-2025",
+                        endDate: "2-07-2025",
+                        defaultPrice: "X"
+                    },
+                    {
+                        material: "FC88B7866",
+                        priceList: "04",
+                        priceListDescription: "Price Lot 04",
+                        uom: "EA",
+                        indicativeMRP: "71.09",
+                        startDate: "3-05-2025",
+                        endDate: "11-07-2025",
+                        defaultPrice: "X"
+                    }
+                ],
+                microProcessItems: [
+                    { 
+                        state: "Success", 
+                        text: "③",
+                        tooltip: "Step 1: Request Created"
+                    },
+                    { 
+                        state: "Success", 
+                        text: "④",
+                        tooltip: "Step 2: First Approval"
+                    },
+                    { 
+                        state: "Success", 
+                        text: "⑤",
+                        tooltip: "Step 3: Final Approval"
+                    }
+                ],
+                selectedRequest: {}
+            };
+
+            const oModel = new JSONModel(oData);
+            this.getView().setModel(oModel);
+            this._updateCounts();
+            this._initMicroProcessFlow();
+
+            // Attach route matched handler
+            this.getRouter().getRoute("requestDetails").attachPatternMatched(this._onRouteMatched, this);
+        },
+
+        getRouter: function () {
+            return UIComponent.getRouterFor(this);
+        },
+
+        _initMicroProcessFlow: function() {
+            const oMicroProcessFlow = this.byId("microProcessFlow");
+            if (oMicroProcessFlow) {
+                const aItems = oMicroProcessFlow.getContent();
+                aItems.forEach(function(oItem) {
+                    oItem.addStyleClass("customProcessStep");
+                });
+            }
+        },
+
+        _updateCounts: function() {
+            const oModel = this.getView().getModel();
+            const aRequests = oModel.getProperty("/requests");
+            
+            const oCounts = {
+                pending: aRequests.filter(req => req.status === "Pending Request").length,
+                draft: aRequests.filter(req => req.status === "Draft").length,
+                sendBack: aRequests.filter(req => req.status === "Send Back").length,
+                rejected: aRequests.filter(req => req.status === "Rejected").length
+            };
+            
+            oModel.setProperty("/counts", oCounts);
+        },
+
+        _onRouteMatched: function (oEvent) {
+            const sRequestNo = oEvent.getParameter("arguments").requestNo;
+            const oModel = this.getOwnerComponent().getModel();
+            const aRequests = oModel.getProperty("/requests");
+            const oRequest = aRequests.find(req => req.requestNo === sRequestNo);
+
+            if (oRequest) {
+                const aPriceDetails = oModel.getProperty("/priceDetails");
+                const aTimelineItems = oModel.getProperty("/timelineItems");
 
                 const oViewModel = new JSONModel({
                     request: oRequest,
                     priceDetails: aPriceDetails,
-                    timelineItems: aTimelineItems
+                    timelineItems: aTimelineItems,
+                    editable: true
                 });
                 this.getView().setModel(oViewModel);
             } else {
@@ -291,7 +493,6 @@ sap.ui.define([
         },
 
         onMicroProcessItemPress: function(oEvent) {
-            // Placeholder for micro process item press logic
             MessageToast.show("Micro process item pressed");
         }
     });
