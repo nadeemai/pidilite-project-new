@@ -131,10 +131,44 @@
                                 <Button id="_IDGenButton4" text="Reject" press="onRejectRequest" type="Reject"/>
                                 <Button id="_IDGenButton5" text="Approve" press="onApproveRequest" type="Accept"/>
                             </Toolbar>
-                        
+                            <VBox id="_IDGenVBox2">
+                                <form:SimpleForm id="_IDGenSimpleForm2" layout="ResponsiveGridLayout" editable="{/editable}" labelSpanXL="4" labelSpanL="4" labelSpanM="4" labelSpanS="12">
+                                    <Panel id="_IDGenPanel23" headerText="Price Requisition Details" expandable="true" expanded="true">
+                                        <Label id="_IDGenLabel24" text="Fields marked with * are mandatory" class="sapUiSmallMarginTop mandatoryLabel"/>
+                                        <layout:Grid id="_IDGenGrid2" defaultSpan="XL6 L6 M6 S12" class="sapUiSmallMargin">
+                                            <!-- Left Column -->
+                                            <VBox id="_IDGenVBox32">
+                                                <Label id="_IDGenLabel52" text="Reference No:*"/>
+                                                <Input id="_IDGenInput22" value="{/selectedRequest/referenceNo}"/>
+                                                <Label id="_IDGenLabel62" text="Division:*"/>
+                                                <Input id="_IDGenInput32" value="{/selectedRequest/division}"/>
+                                                <Label id="_IDGenLabel72" text="DCNR# form:"/>
+                                                <Input id="_IDGenInput42" value="{/selectedRequest/dcnrForm}"/>
+                                                <Label id="_IDGenLabel82" text="Standard Reason:"/>
+                                                <Input id="_IDGenInput52" value="{/selectedRequest/standardReason}"/>
+                                                <Label id="_IDGenLabel92" text="Comment by Creator:"/>
+                                                <Input id="_IDGenInput62" value="{/selectedRequest/creatorComment}"/>
+                                            </VBox>
+                                            <!-- Right Column -->
+                                            <VBox id="_IDGenVBox42">
+                                                <Label id="_IDGenLabel102" text="Created By:"/>
+                                                <Text id="_IDGenText132" text="{/selectedRequest/createdBy}"/>
+                                                <Label id="_IDGenLabel112" text="Created Date:"/>
+                                                <Text id="_IDGenText142" text="{/selectedRequest/createdOn}"/>
+                                                <Label id="_IDGenLabel122" text="Status of the Request:"/>
+                                                <Text id="_IDGenText152" text="{/selectedRequest/status}"/>
+                                                <Label id="_IDGenLabel132" text="Sales Group:"/>
+                                                <Input id="_IDGenInput72" value="{/selectedRequest/salesGroup}"/>
+                                                <Label id="_IDGenLabel142" text="DCNR% to:"/>
+                                                <Input id="_IDGenInput82" value="{/selectedRequest/dcnrTo}"/>
+                                            </VBox>
+                                        </layout:Grid>
+                                    </Panel>
+                                </form:SimpleForm>
+                            </VBox>
                             <IconTabBar id="detailsTabBar2" select="onDetailsTabSelect" expandable="false" class="sapUiSmallMarginTop">
                                 <items>
-                                    <!-- <IconTabFilter id="_IDGenIconTabFilter2" text="Price Details" key="priceDetails">
+                                    <IconTabFilter id="_IDGenIconTabFilter2" text="Price Details" key="priceDetails">
                                         <Table id="_IDGenTable" items="{/priceDetails}" width="100%">
                                             <columns>
                                                 <Column id="_IDGenColumn7"><Text id="_IDGenText16" text="Material"/></Column>
@@ -161,8 +195,8 @@
                                                 </ColumnListItem>
                                             </items>
                                         </Table>
-                                    </IconTabFilter> -->
-                                    <!-- <IconTabFilter id="_IDGenIconTabFilter3" text="Timeline" key="timeline">
+                                    </IconTabFilter>
+                                    <IconTabFilter id="_IDGenIconTabFilter3" text="Timeline" key="timeline">
                                         <suite:Timeline 
                                             id="detailsTimeline2" 
                                             enableScroll="true" 
@@ -182,7 +216,7 @@
                                                     icon="sap-icon://customer-briefing"/>
                                             </suite:content>
                                         </suite:Timeline>
-                                    </IconTabFilter> -->
+                                    </IconTabFilter>
                                 </items>
                             </IconTabBar>
                         </Panel>
