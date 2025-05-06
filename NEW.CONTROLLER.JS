@@ -20,14 +20,6 @@ sap.ui.define([
                     createdOn: "",
                     status: ""
                 },
-                statusItems: [
-                    { key: "", text: "All" },
-                    { key: "Draft", text: "Draft" },
-                    { key: "Send Back", text: "Send Back" },
-                    { key: "Rejected", text: "Rejected" },
-                    { key: "Pending Request", text: "Pending Request" },
-                    { key: "Approved", text: "Approved" }
-                ],
                 draftCount: 0,
                 sentBackCount: 0,
                 rejectedCount: 0,
@@ -44,6 +36,163 @@ sap.ui.define([
             });
             this.getView().setModel(oViewModel, "viewModel");
 
+            // Initialize component model with provided data
+            const oComponentData = {
+                statusItems: [
+                    { key: "", text: "All" },
+                    { key: "Draft", text: "Draft" },
+                    { key: "Send Back", text: "Send Back" },
+                    { key: "Rejected", text: "Rejected" },
+                    { key: "Pending Request", text: "Pending Request" },
+                    { key: "Approved", text: "Approved" }
+                ],
+                requestTypes: [
+                    { key: "TYPE1", text: "Type 1 Request" },
+                    { key: "TYPE2", text: "Type 2 Request" },
+                    { key: "TYPE3", text: "Type 3 Request" }
+                ],
+                requests: [
+                    {
+                        requestNo: "RM0000001",
+                        createdBy: "Buyer1",
+                        createdOn: "Feb 02, 2025",
+                        status: "Pending Request",
+                        remarks: "Awaiting approval",
+                        pendingWith: "Manager1",
+                        requestAging: "10 Days",
+                        referenceNo: "RM0000001",
+                        division: "Division 1",
+                        dcnrForm: "Form 123",
+                        standardReason: "Price Adjustment",
+                        salesGroup: "Group A",
+                        creatorComment: "Urgent request",
+                        dcnrTo: "Finance",
+                        attachments: []
+                    },
+                    {
+                        requestNo: "RM0000002",
+                        createdBy: "Buyer2",
+                        createdOn: "Feb 03, 2025",
+                        status: "Pending Request",
+                        remarks: "Under review",
+                        pendingWith: "Manager2",
+                        requestAging: "8 Days",
+                        referenceNo: "RM0000002",
+                        division: "Division 2",
+                        dcnrForm: "Form 124",
+                        standardReason: "Price Change",
+                        salesGroup: "Group B",
+                        creatorComment: "Needs quick approval",
+                        dcnrTo: "Finance",
+                        attachments: []
+                    },
+                    {
+                        requestNo: "RM0000003",
+                        createdBy: "Buyer3",
+                        createdOn: "Feb 01, 2025",
+                        status: "Draft",
+                        remarks: "-",
+                        pendingWith: "-",
+                        requestAging: "12 Days",
+                        referenceNo: "RM0000003",
+                        division: "Division 1",
+                        dcnrForm: "Form 125",
+                        standardReason: "Price Update",
+                        salesGroup: "Group A",
+                        creatorComment: "Draft in progress",
+                        dcnrTo: "Finance",
+                        attachments: []
+                    },
+                    {
+                        requestNo: "RM0000004",
+                        createdBy: "Buyer3",
+                        createdOn: "Feb 01, 2025",
+                        status: "Draft",
+                        remarks: "-",
+                        pendingWith: "-",
+                        requestAging: "12 Days",
+                        referenceNo: "RM0000004",
+                        division: "Division 1",
+                        dcnrForm: "Form 125",
+                        standardReason: "Price Update",
+                        salesGroup: "Group A",
+                        creatorComment: "Draft in progress",
+                        dcnrTo: "Finance",
+                        attachments: []
+                    },
+                    {
+                        requestNo: "RM0000005",
+                        createdBy: "Buyer4",
+                        createdOn: "Feb 04, 2025",
+                        status: "Send Back",
+                        remarks: "Needs revision",
+                        pendingWith: "Buyer4",
+                        requestAging: "5 Days",
+                        referenceNo: "RM0000005",
+                        division: "Division 3",
+                        dcnrForm: "Form 126",
+                        standardReason: "Price Correction",
+                        salesGroup: "Group C",
+                        creatorComment: "Sent back for updates",
+                        dcnrTo: "Finance",
+                        attachments: []
+                    },
+                    {
+                        requestNo: "RM0000006",
+                        createdBy: "Buyer4",
+                        createdOn: "Feb 04, 2025",
+                        status: "Send Back",
+                        remarks: "Needs revision",
+                        pendingWith: "Buyer4",
+                        requestAging: "5 Days",
+                        referenceNo: "RM0000006",
+                        division: "Division 3",
+                        dcnrForm: "Form 126",
+                        standardReason: "Price Correction",
+                        salesGroup: "Group C",
+                        creatorComment: "Sent back for updates",
+                        dcnrTo: "Finance",
+                        attachments: []
+                    },
+                    {
+                        requestNo: "RM0000007",
+                        createdBy: "Buyer5",
+                        createdOn: "Jan 30, 2025",
+                        status: "Rejected",
+                        remarks: "Invalid data",
+                        pendingWith: "-",
+                        requestAging: "15 Days",
+                        referenceNo: "RM0000007",
+                        division: "Division 2",
+                        dcnrForm: "Form 127",
+                        standardReason: "Price Change",
+                        salesGroup: "Group B",
+                        creatorComment: "Request rejected",
+                        dcnrTo: "Finance",
+                        attachments: []
+                    },
+                    {
+                        requestNo: "RM0000008",
+                        createdBy: "Buyer5",
+                        createdOn: "Jan 30, 2025",
+                        status: "Rejected",
+                        remarks: "Invalid data",
+                        pendingWith: "-",
+                        requestAging: "15 Days",
+                        referenceNo: "RM0000008",
+                        division: "Division 2",
+                        dcnrForm: "Form 127",
+                        standardReason: "Price Change",
+                        salesGroup: "Group B",
+                        creatorComment: "Request rejected",
+                        dcnrTo: "Finance",
+                        attachments: []
+                    }
+                ]
+            };
+            const oComponentModel = new JSONModel(oComponentData);
+            this.getOwnerComponent().setModel(oComponentModel);
+
             // Update counts from component model
             this._updateCounts();
         },
@@ -55,7 +204,7 @@ sap.ui.define([
         _updateCounts: function () {
             const oComponentModel = this.getOwnerComponent().getModel();
             const oViewModel = this.getView().getModel("viewModel");
-            const aRequests = oComponentModel.getProperty("/requests") || [];
+            const aRequests = oComponentModel.getData().requests || [];
 
             const oCounts = {
                 draftCount: aRequests.filter(r => r.status === "Draft").length,
@@ -178,7 +327,7 @@ sap.ui.define([
             }
 
             const oComponentModel = this.getOwnerComponent().getModel();
-            const aRequests = oComponentModel.getProperty("/requests");
+            const aRequests = oComponentModel.getData().requests || [];
             const iNewId = aRequests.length + 1;
             const sNewRequestNo = "RM" + String(iNewId).padStart(7, "0");
 
@@ -204,7 +353,7 @@ sap.ui.define([
             };
 
             aRequests.unshift(oRequest);
-            oComponentModel.setProperty("/requests", aRequests);
+            oComponentModel.setData({ ...oComponentModel.getData(), requests: aRequests });
 
             this._updateCounts();
             this.byId("createRequestDialog").close();
