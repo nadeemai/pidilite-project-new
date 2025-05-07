@@ -42,6 +42,34 @@ sap.ui.define([
             });
             this.getView().setModel(oViewModel, "viewModel");
 
+            // Initialize micro process flow data
+            const oComponentModel = this.getOwnerComponent().getModel();
+            if (!oComponentModel) {
+                MessageToast.show("Component model not initialized");
+                return;
+            }
+
+            const oComponentData = {
+                microProcessItems: [
+                    {
+                        state: "Success",
+                        text: "①",
+                        tooltip: "Step 1: Request Created"
+                    },
+                    {
+                        state: "Warning",
+                        text: "②",
+                        tooltip: "Step 2: First Approval"
+                    },
+                    {
+                        state: "Error",
+                        text: "③",
+                        tooltip: "Step 3: Final Approval"
+                    }
+                ]
+            };
+            oComponentModel.setData({ ...oComponentModel.getData(), ...oComponentData });
+
             // Update counts and initialize micro process flow
             this._updateCounts();
             this._initMicroProcessFlow();
@@ -368,7 +396,7 @@ sap.ui.define([
 
         handleTypeMissmatch: function (oEvent) {
             const aFileTypes = oEvent.getSource().getFileType().map(sType => "*." + sType);
-            MessageToast.show(`The file type *.${oEvent.getParameter("fileType")} is not supported. Choose one of the following types: ${aFileTypes.join(", ")}`);
+            MessageToast.show(`The file type *.${oEvent.getParameter(" utrType")} is not supported. Choose one of the following types: ${aFileTypes.join(", ")}`);
         },
 
         onDetailsTabSelect: function (oEvent) {
@@ -424,6 +452,8 @@ sap.ui.define([
         }
     });
 });
+
+OLD CODE
 
 
 sap.ui.define([
