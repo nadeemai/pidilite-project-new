@@ -164,7 +164,188 @@ sap.ui.define([
                         status: "Rejected",
                         remarks: "Invalid data",
                         pendingWith: "-",
-                        // requestAging: "钭
+                        requestAging: "15 Days",
+                        referenceNo: "RM0000007",
+                        division: "Division 2",
+                        dcnrForm: "Form 127",
+                        standardReason: "Price Change",
+                        salesGroup: "Group B",
+                        creatorComment: "Request rejected",
+                        dcnrTo: "Finance",
+                        attachments: []
+                    },
+                    {
+                        requestNo: "RM0000008",
+                        createdBy: "Buyer5",
+                        createdOn: "Jan 30, 2025",
+                        status: "Rejected",
+                        remarks: "Invalid data",
+                        pendingWith: "-",
+                        requestAging: "15 Days",
+                        referenceNo: "RM0000008",
+                        division: "Division 2",
+                        dcnrForm: "Form 127",
+                        standardReason: "Price Change",
+                        salesGroup: "Group B",
+                        creatorComment: "Request rejected",
+                        dcnrTo: "Finance",
+                        attachments: []
+                    }
+                ],
+                priceDetails: [
+                    {
+                        material: "FC88B7866",
+                        priceList: "04",
+                        priceListDescription: "Price Lot 04",
+                        uom: "EA",
+                        indicativeMRP: "41.00",
+                        startDate: "13-05-2025",
+                        endDate: "24-07-2025",
+                        defaultPrice: "X"
+                    },
+                    {
+                        material: "FC88B7866",
+                        priceList: "04",
+                        priceListDescription: "Price Lot 04",
+                        uom: "EA",
+                        indicativeMRP: "41.00",
+                        startDate: "18-05-2025",
+                        endDate: "04-07-2025",
+                        defaultPrice: "X"
+                    },
+                    {
+                        material: "FC88B7866",
+                        priceList: "04",
+                        priceListDescription: "Price Lot 04",
+                        uom: "EA",
+                        indicativeMRP: "42.00",
+                        startDate: "23-05-2025",
+                        endDate: "02-07-2025",
+                        defaultPrice: "X"
+                    },
+                    {
+                        material: "FC88B7866",
+                        priceList: "04",
+                        priceListDescription: "Price Lot 04",
+                        uom: "EA",
+                        indicativeMRP: "71.09",
+                        startDate: "03-05-2025",
+                        endDate: "11-07-2025",
+                        defaultPrice: "X"
+                    }
+                ],
+                timelineItems: [
+                    {
+                        dateTime: "7/22/2016 at 3:00 PM",
+                        title: "Pushpak Jha Sir Created a Request",
+                        text: "PLEASE go through and evaluate.",
+                        userName: "Pushpak Jha Sir",
+                        userPicture: "https://ui-avatars.com/api/?name=PushpakJhaSir",
+                        status: "Information"
+                    },
+                    {
+                        dateTime: "7/22/2016 at 3:00 PM",
+                        title: "Ankit Patilak Created a Request",
+                        text: "PLEASE go through and evaluate.",
+                        userName: "Ankit Patilak",
+                        userPicture: "https://ui-avatars.com/api/?name=Ankit+Patilak",
+                        status: "Information"
+                    },
+                    {
+                        dateTime: "7/22/2016 at 3:00 PM",
+                        title: "Aakib Sir Created a Request",
+                        text: "PLEASE go through and evaluate.",
+                        userName: "Aakib Sir",
+                        userPicture: "https://ui-avatars.com/api/?name=AakibSir",
+                        status: "Information"
+                    },
+                    {
+                        dateTime: "7/22/2016 at 3:00 PM",
+                        title: "Vikrant SIr Created a Request",
+                        text: "PLEASE go through and evaluate.",
+                        userName: "Vikrant SIr",
+                        userPicture: "https://ui-avatars.com/api/?name=VikrantSIr",
+                        status: "Information"
+                    },
+                    {
+                        dateTime: "7/22/2016 at 3:00 PM",
+                        title: "Ayush Sir Created a Request",
+                        text: "PLEASE go through and evaluate.",
+                        userName: "Ayush Sir",
+                        userPicture: "https://ui-avatars.com/api/?name=AyushSir",
+                        status: "Information"
+                    },
+                    {
+                        dateTime: "7/22/2016 at 3:00 PM",
+                        title: "Tanu Mam Created a Request",
+                        text: "PLEASE go through and evaluate.",
+                        userName: "Tanu Mam",
+                        userPicture: "https://ui-avatars.com/api/?name=TanuMam",
+                        status: "Information"
+                    },
+                    {
+                        dateTime: "7/22/2016 at 3:00 PM",
+                        title: "Ishan Created a Request",
+                        text: "PLEASE go through and evaluate.",
+                        userName: "Ishan",
+                        userPicture: "https://ui-avatars.com/api/?name=Ishan",
+                        status: "Information"
+                    },
+                    {
+                        dateTime: "7/22/2016 at 5:00 PM",
+                        title: "Ayushi Mam added a note [APPROVED]",
+                        text: "OK",
+                        userName: "Ayushi Mam",
+                        userPicture: "https://ui-avatars.com/api/?name=AyushiMam",
+                        status: "Information"
+                    },
+                    {
+                        dateTime: "7/22/2016 at 3:00 PM",
+                        title: "Pushkar Jha added a note [APPROVED]",
+                        text: "Done",
+                        userName: "Pushkar Jha",
+                        userPicture: "https://ui-avatars.com/api/?name=PushkarJha",
+                        status: "Information"
+                    },
+                    {
+                        dateTime: "7/22/2016 at 3:00 PM",
+                        title: "Subham D added a note [Approved]",
+                        text: "Done.",
+                        userName: "Subham D",
+                        userPicture: "https://ui-avatars.com/api/?name=SubhamD",
+                        status: "Information"
+                    },
+                    {
+                        dateTime: "7/22/2016 at 3:00 PM",
+                        title: "Yugal Sir added a note [APPROVED]",
+                        text: "ok",
+                        userName: "Yugal Sir",
+                        userPicture: "https://ui-avatars.com/api/?name=YugalSir",
+                        status: "Information"
+                    },
+                    {
+                        dateTime: "7/22/2016 at 3:00 PM",
+                        title: "Suraj Sir added a note [APPROVED]",
+                        text: "ok",
+                        userName: "Suraj Sir",
+                        userPicture: "https://ui-avatars.com/api/?name=SurajSir",
+                        status: "Information"
+                    },
+                    {
+                        dateTime: "7/22/2016 at 3:00 PM",
+                        title: "Ravindra Kumar added a note [APPROVED]",
+                        text: "ok",
+                        userName: "Ravindra Kumar",
+                        userPicture: "https://ui-avatars.com/api/?name=RavindraKumar",
+                        status: "Information"
+                    },
+                    {
+                        dateTime: "7/22/2016 at 3:00 PM",
+                        title: "Vikash Sir added a note [APPROVED]",
+                        text: "ok",
+                        userName: "Vikash Sir",
+                        userPicture: "https://ui-avatars.com/api/?name=VikashSir",
+                        status: "Information"
                     }
                 ]
             };
@@ -370,6 +551,8 @@ sap.ui.define([
     });
 });
 
+
+OLD CODE
 
 sap.ui.define([
     "sap/ui/core/mvc/Controller",
