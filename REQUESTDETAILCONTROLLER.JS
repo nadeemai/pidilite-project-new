@@ -1,3 +1,455 @@
+UPDATED CODE 2 
+
+sap.ui.define([
+    "sap/ui/core/mvc/Controller",
+    "sap/m/MessageBox",
+    "sap/m/MessageToast",
+    "sap/ui/model/json/JSONModel",
+    "sap/ui/model/Filter",
+    "sap/ui/model/FilterOperator",
+    "sap/ui/core/format/DateFormat",
+    "sap/ui/core/routing/History",
+    "sap/ui/core/Fragment",
+    "sap/ui/core/UIComponent",
+    "sap/ui/core/library",
+    "sap/base/Log"
+], function (Controller, MessageBox, MessageToast, JSONModel, Filter, FilterOperator, DateFormat, History, Fragment, UIComponent, coreLibrary, Log) {
+    "use strict";
+
+    return Controller.extend("com.pidilite.pidilite.controller.RequestDetails", {
+        onInit: function () {
+            // Inject CSS for boldStatusText
+            const sStyle = ".boldStatusText { font-weight: bold !important; }";
+            const oStyleElement = document.createElement("style");
+            oStyleElement.type = "text/css";
+            oStyleElement.appendChild(document.createTextNode(sStyle));
+            document.head.appendChild(oStyleElement);
+
+            // Initialize view model
+            const oViewModel = new JSONModel({
+                request: {},
+                priceDetails: [],
+                timelineItems: [],
+                microProcessItems: [],
+                approverLog: [],
+                approverList: [],
+                reqSeqTracker: [],
+                newRequest: {
+                    type: "",
+                    description: "",
+                    file: null
+                },
+                uploadedFiles: [],
+                uploadedFilesCount: 0,
+                editable: true,
+                isLoading: true
+            });
+            this.getView().setModel(oViewModel, "viewModel");
+
+            // Initialize micro process flow data
+            this._initMicroProcessFlow();
+
+            // Attach route matched handler
+            this.getRouter().getRoute("requestDetails").attachPatternMatched(this._onRouteMatched, this);
+        },
+
+        getRouter: function () {
+            return UIComponent.getRouterFor(this);
+        },
+
+        _initMicroProcessFlow: function () {
+            const oMicroProcessFlow = this.byId("microProcessFlow");
+            if (oMicroProcessFlow) {
+                const aItems = oMicroProcessFlow.getContent();
+                aItems.forEach(function (oItem) {
+                    oItem.addStyleClass("customProcessStep");
+                });
+            }
+        },
+
+        _loadMaterialPriceLot: function (sMaterial) {
+            return new Promise((resolve, reject) => {
+                // Simulate API call to /MaterialPriceLot endpoint
+                setTimeout(() => {
+                    try {
+                        const oViewModel = this.getView().getModel("viewModel");
+                        // This would be replaced with actual API call
+                        // fetch(`/MaterialPriceLot?material=${sMaterial}`).then(...)
+                        const aPriceDetails = [
+                            {
+                                material: sMaterial || "FC88B7866",
+                                priceList: "04",
+                                priceListDescription: "Price Lot 04",
+                                uom: "EA",
+                                indicativeMRP: "41.00",
+                                startDate: "13-05-2025",
+                                endDate: "24-07-2025",
+                                defaultPrice: "X"
+                            },
+                            // ... (other mock price details from original code)
+                        ];
+                        oViewModel.setProperty("/priceDetails", aPriceDetails);
+                        resolve();
+                    } catch (oError) {
+                        reject(oError);
+                    }
+                }, 300);
+            });
+        },
+
+        _loadApproverLog: function (sRequestNo) {
+            return new Promise((resolve, reject) => {
+                // Simulate API call to /ApproverLog endpoint
+                setTimeout(() => {
+                    try {
+                        const oViewModel = this.getView().getModel("viewModel");
+                        // This would be replaced with actual API call
+                        // fetch(`/ApproverLog?requestNo=${sRequestNo}`).then(...)
+                        const aApproverLog = [
+                            {
+                                approver: "Approver 1",
+                                action: "Approved",
+                                date: "2025-02-01",
+                                comments: "Looks good"
+                            },
+                            {
+                                approver: "Approver 2",
+                                action: "Reviewed",
+                                date: "2025-02-02",
+                                comments: "Needs more info"
+                            }
+                        ];
+                        oViewModel.setProperty("/approverLog", aApproverLog);
+                        resolve();
+                    } catch (oError) {
+                        reject(oError);
+                    }
+                }, 300);
+            });
+        },
+
+        _loadApproverList: function (sRequestNo) {
+            return new Promise((resolve, reject) => {
+                // Simulate API call to /ApproverList endpoint
+                setTimeout(() => {
+                    try {
+                        const oViewModel = this.getView().getModel("viewModel");
+                        // This would be replaced with actual API call
+                        // fetch(`/ApproverList?requestNo=${sRequestNo}`).then(...)
+                        const aApproverList = [
+                            {
+                                approver: "Approver 1",
+                                role: "First Approver",
+                                status: "Completed"
+                            },
+                            {
+                                approver: "Approver 2",
+                                role: "Final Approver",
+                                status: "Pending"
+                            }
+                        ];
+                        oViewModel.setProperty("/approverList", aApproverList);
+                        resolve();
+                    } catch (oError) {
+                        reject(oError);
+                    }
+                }, 300);
+            });
+        },
+
+        _loadReqSeqTracker: function (sRequestNo) {
+            return new Promise((resolve, reject) => {
+                // Simulate API call to /ReqSeqTracker endpoint
+                setTimeout(() => {
+                    try {
+                        const oViewModel = this.getView().getModel("viewModel");
+                        // This would be replaced with actual API call
+                        // fetch(`/ReqSeqTracker?requestNo=${sRequestNo}`).then(...)
+                        const aReqSeqTracker = [
+                            {
+                                sequence: "1",
+                                action: "Created",
+                                date: "2025-02-01",
+                                user: "User1"
+                            },
+                            {
+                                sequence: "2",
+                                action: "Submitted",
+                                date: "2025-02-02",
+                                user: "User1"
+                            }
+                        ];
+                        oViewModel.setProperty("/reqSeqTracker", aReqSeqTracker);
+                        resolve();
+                    } catch (oError) {
+                        reject(oError);
+                    }
+                }, 300);
+            });
+        },
+
+        _onRouteMatched: function (oEvent) {
+            const sRequestNo = oEvent.getParameter("arguments").requestNo;
+            const oComponentModel = this.getOwnerComponent().getModel();
+            const oViewModel = this.getView().getModel("viewModel");
+
+            if (!oComponentModel) {
+                MessageToast.show("Component model not found");
+                this.onNavBack();
+                return;
+            }
+
+            oViewModel.setProperty("/isLoading", true);
+
+            // Load all related data in parallel
+            Promise.all([
+                this._loadRequestDetails(sRequestNo),
+                this._loadMaterialPriceLot(),
+                this._loadApproverLog(sRequestNo),
+                this._loadApproverList(sRequestNo),
+                this._loadReqSeqTracker(sRequestNo)
+            ]).then(() => {
+                oViewModel.setProperty("/isLoading", false);
+            }).catch(oError => {
+                Log.error("Failed to load request details: " + oError.message);
+                oViewModel.setProperty("/isLoading", false);
+                MessageBox.error("Failed to load request details. Please try again later.");
+                this.onNavBack();
+            });
+        },
+
+        _loadRequestDetails: function (sRequestNo) {
+            return new Promise((resolve, reject) => {
+                const oComponentModel = this.getOwnerComponent().getModel();
+                const aRequests = oComponentModel.getProperty("/requests") || [];
+                const oRequest = aRequests.find(req => req.requestNo === sRequestNo);
+
+                if (oRequest) {
+                    const oViewModel = this.getView().getModel("viewModel");
+                    
+                    // Set editable based on status
+                    const bEditable = oRequest.status === "Draft" || oRequest.status === "Send Back";
+                    
+                    oViewModel.setProperty("/request", { ...oRequest });
+                    oViewModel.setProperty("/editable", bEditable);
+                    
+                    // Update micro process flow based on request status
+                    this._updateMicroProcessFlow(oRequest.status);
+                    
+                    resolve();
+                } else {
+                    reject(new Error(`Request ${sRequestNo} not found`));
+                }
+            });
+        },
+
+        _updateMicroProcessFlow: function (sStatus) {
+            const oViewModel = this.getView().getModel("viewModel");
+            let aMicroProcessItems = oViewModel.getProperty("/microProcessItems") || [];
+
+            // Initialize micro process items if empty
+            if (aMicroProcessItems.length === 0) {
+                aMicroProcessItems = [
+                    {
+                        state: "None",
+                        text: "①",
+                        tooltip: "Step 1: Request Created"
+                    },
+                    {
+                        state: "None",
+                        text: "②",
+                        tooltip: "Step 2: First Approval"
+                    },
+                    {
+                        state: "None",
+                        text: "③",
+                        tooltip: "Step 3: Final Approval"
+                    }
+                ];
+            }
+
+            // Update micro process items based on status
+            aMicroProcessItems = aMicroProcessItems.map((item, index) => {
+                if (sStatus === "Draft" && index === 0) {
+                    return { ...item, state: "Success" };
+                } else if (sStatus === "Pending Request" && index <= 1) {
+                    return { ...item, state: "Success" };
+                } else if (sStatus === "Approved" && index <= 2) {
+                    return { ...item, state: "Success" };
+                } else if (sStatus === "Send Back" && index === 1) {
+                    return { ...item, state: "Warning" };
+                } else if (sStatus === "Rejected" && index === 1) {
+                    return { ...item, state: "Error" };
+                }
+                return item;
+            });
+
+            oViewModel.setProperty("/microProcessItems", aMicroProcessItems);
+        },
+
+        onNavBack: function () {
+            const oHistory = History.getInstance();
+            const sPreviousHash = oHistory.getPreviousHash();
+
+            if (sPreviousHash !== undefined) {
+                window.history.go(-1);
+            } else {
+                this.getRouter().navTo("dashboard", {}, true);
+            }
+        },
+
+        onSaveRequest: function () {
+            const oViewModel = this.getView().getModel("viewModel");
+            const oRequest = oViewModel.getProperty("/request");
+
+            // Validate mandatory fields
+            if (!oRequest.referenceNo || !oRequest.division) {
+                MessageBox.error("Please fill all mandatory fields: Reference No and Division.");
+                return;
+            }
+
+            // Simulate API call to save request
+            this._saveRequest(oRequest).then(() => {
+                MessageToast.show("Request saved successfully");
+            }).catch(oError => {
+                MessageBox.error("Error saving request: " + oError.message);
+            });
+        },
+
+        _saveRequest: function (oRequest) {
+            return new Promise((resolve, reject) => {
+                try {
+                    const oComponentModel = this.getOwnerComponent().getModel();
+                    const aRequests = oComponentModel.getProperty("/requests") || [];
+                    const iIndex = aRequests.findIndex(req => req.requestNo === oRequest.requestNo);
+
+                    if (iIndex >= 0) {
+                        aRequests[iIndex] = { ...aRequests[iIndex], ...oRequest };
+                        oComponentModel.setProperty("/requests", aRequests);
+                        resolve();
+                    } else {
+                        reject(new Error("Request not found"));
+                    }
+                } catch (oError) {
+                    reject(oError);
+                }
+            });
+        },
+
+        onSendBackRequest: function () {
+            const oViewModel = this.getView().getModel("viewModel");
+            const oRequest = oViewModel.getProperty("/request");
+
+            // Simulate API call to send back request
+            this._updateRequestStatus(oRequest.requestNo, "Send Back", "Sent back for revision").then(() => {
+                MessageToast.show("Request sent back successfully");
+                this.onNavBack();
+            }).catch(oError => {
+                MessageBox.error("Error sending back request: " + oError.message);
+            });
+        },
+
+        onRejectRequest: function () {
+            const oViewModel = this.getView().getModel("viewModel");
+            const oRequest = oViewModel.getProperty("/request");
+
+            // Simulate API call to reject request
+            this._updateRequestStatus(oRequest.requestNo, "Rejected", "Request rejected").then(() => {
+                MessageToast.show("Request rejected successfully");
+                this.onNavBack();
+            }).catch(oError => {
+                MessageBox.error("Error rejecting request: " + oError.message);
+            });
+        },
+
+        onApproveRequest: function () {
+            const oViewModel = this.getView().getModel("viewModel");
+            const oRequest = oViewModel.getProperty("/request");
+
+            // Simulate API call to approve request
+            this._updateRequestStatus(oRequest.requestNo, "Approved", "Request approved").then(() => {
+                MessageToast.show("Request approved successfully");
+                this.onNavBack();
+            }).catch(oError => {
+                MessageBox.error("Error approving request: " + oError.message);
+            });
+        },
+
+        _updateRequestStatus: function (sRequestNo, sStatus, sRemarks) {
+            return new Promise((resolve, reject) => {
+                try {
+                    const oComponentModel = this.getOwnerComponent().getModel();
+                    const aRequests = oComponentModel.getProperty("/requests") || [];
+                    const iIndex = aRequests.findIndex(req => req.requestNo === sRequestNo);
+
+                    if (iIndex >= 0) {
+                        aRequests[iIndex] = {
+                            ...aRequests[iIndex],
+                            status: sStatus,
+                            remarks: sRemarks,
+                            pendingWith: sStatus === "Send Back" ? aRequests[iIndex].createdBy : ""
+                        };
+                        oComponentModel.setProperty("/requests", aRequests);
+                        resolve();
+                    } else {
+                        reject(new Error("Request not found"));
+                    }
+                } catch (oError) {
+                    reject(oError);
+                }
+            });
+        },
+
+        onDownloadFile: function (oEvent) {
+            const oItem = oEvent.getSource().getBindingContext("viewModel").getObject();
+            MessageToast.show("Downloading file: " + oItem.fileName);
+        },
+
+        onDetailsTabSelect: function (oEvent) {
+            const sKey = oEvent.getParameter("key");
+            MessageToast.show(`Selected tab: ${sKey}`);
+        },
+
+        onMicroProcessItemPress: function (oEvent) {
+            const oItem = oEvent.getSource();
+            const sTooltip = oItem.getTooltip();
+
+            if (!this._oOrderStatusDialog) {
+                Fragment.load({
+                    id: this.getView().getId(),
+                    name: "com.pidilite.pidilite.view.OrderStatusDialog",
+                    controller: this
+                }).then(oDialog => {
+                    this._oOrderStatusDialog = oDialog;
+                    this.getView().addDependent(this._oOrderStatusDialog);
+                    this._updateOrderStatusDialog(sTooltip);
+                    this._oOrderStatusDialog.open();
+                }).catch(() => {
+                    MessageBox.error("Error loading dialog");
+                });
+            } else {
+                this._updateOrderStatusDialog(sTooltip);
+                this._oOrderStatusDialog.open();
+            }
+        },
+
+        _updateOrderStatusDialog: function (sTooltip) {
+            if (this._oOrderStatusDialog) {
+                const oTitle = this._oOrderStatusDialog.getContent()[0].getItems()[0].getItems()[1];
+                const oText = this._oOrderStatusDialog.getContent()[0].getItems()[1];
+                oTitle.setText(sTooltip);
+                oText.setText(`Details for ${sTooltip}`);
+            }
+        },
+
+        onCloseOrderStatus: function () {
+            if (this._oOrderStatusDialog) {
+                this._oOrderStatusDialog.close();
+            }
+        }
+    });
+});
+
 
 UPDATED CODE
 
