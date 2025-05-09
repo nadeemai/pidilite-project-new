@@ -74,7 +74,21 @@ sap.ui.define([
                     // Get the OData V4 model named "catalog" from the component
                     const oODataModel = this.getOwnerComponent().getModel("catalog");
                     if (!oODataModel) {
-                        throw new Error("OData model 'catalog' not found");
+                        Log.error("OData model 'catalog' not found during _loadMaterialPriceLot");
+                        const oViewModel = this.getView().getModel("viewModel");
+                        oViewModel.setProperty("/priceDetails", [{
+                            ID: "PD001",
+                            Material: "MAT001",
+                            PriceLot: "PL01",
+                            PriceLotDescription: "Standard Price Lot",
+                            UoM: "EA",
+                            IndicativeMRP: 50.00,
+                            StartDate: "2025-01-01",
+                            EndDate: "2025-12-31",
+                            DefaultPriceLotForMaterial: "X"
+                        }]);
+                        resolve();
+                        return;
                     }
 
                     // Create a list binding for MaterialPriceLot with requestNo filter
@@ -121,7 +135,6 @@ sap.ui.define([
                         resolve();
                     }.bind(this)).catch(function (oError) {
                         Log.error("Failed to fetch material price lot: " + oError.message);
-                        // Fallback to mock data
                         const oViewModel = this.getView().getModel("viewModel");
                         oViewModel.setProperty("/priceDetails", [{
                             ID: "PD001",
@@ -134,11 +147,10 @@ sap.ui.define([
                             EndDate: "2025-12-31",
                             DefaultPriceLotForMaterial: "X"
                         }]);
-                        resolve(); // Resolve to prevent blocking
+                        resolve();
                     }.bind(this));
                 } catch (oError) {
                     Log.error("Error in _loadMaterialPriceLot: " + oError.message);
-                    // Fallback to mock data
                     const oViewModel = this.getView().getModel("viewModel");
                     oViewModel.setProperty("/priceDetails", [{
                         ID: "PD001",
@@ -151,7 +163,7 @@ sap.ui.define([
                         EndDate: "2025-12-31",
                         DefaultPriceLotForMaterial: "X"
                     }]);
-                    resolve(); // Resolve to prevent blocking
+                    resolve();
                 }
             });
         },
@@ -159,20 +171,31 @@ sap.ui.define([
         _loadTimeline: function (sRequestNo) {
             return new Promise((resolve, reject) => {
                 try {
-                    // Get the OData V4 model named "catalog" from the component
                     const oODataModel = this.getOwnerComponent().getModel("catalog");
                     if (!oODataModel) {
-                        throw new Error("OData model 'catalog' not found");
+                        Log.error("OData model 'catalog' not found during _loadTimeline");
+                        const oViewModel = this.getView().getModel("viewModel");
+                        oViewModel.setProperty("/timelineItems", [{
+                            ID: "TL001",
+                            requestNo: sRequestNo,
+                            dateTime: "2025-02-01T10:00:00Z",
+                            title: "Request Created",
+                            text: "Request was created by Buyer1",
+                            userName: "Buyer1",
+                            userPicture: "",
+                            status: "Success",
+                            icon: "sap-icon://employee-approvals"
+                        }]);
+                        resolve();
+                        return;
                     }
 
-                    // Create a list binding for ApproverLog with requestNo filter
                     const aFilters = [new Filter("requestNo/requestNo", FilterOperator.EQ, sRequestNo)];
                     const oBinding = oODataModel.bindList("/ApproverLog", undefined, undefined, aFilters, {
                         $top: 100,
                         $skip: 0
                     });
 
-                    // Request contexts (data) from the binding
                     oBinding.requestContexts(0, 100).then(function (aContexts) {
                         const oViewModel = this.getView().getModel("viewModel");
                         const aTimelineItems = aContexts.map(oContext => {
@@ -192,13 +215,12 @@ sap.ui.define([
                                 title: oData.status,
                                 text: `${oData.role} - ${oData.approver}`,
                                 userName: oData.approver,
-                                userPicture: "", // Add logic for user picture if available
+                                userPicture: "",
                                 status: sStatus,
                                 icon: "sap-icon://employee-approvals"
                             };
                         });
 
-                        // Fallback to mock data if no results are returned
                         if (aTimelineItems.length === 0) {
                             aTimelineItems.push({
                                 ID: "TL001",
@@ -217,7 +239,6 @@ sap.ui.define([
                         resolve();
                     }.bind(this)).catch(function (oError) {
                         Log.error("Failed to fetch approver log for timeline: " + oError.message);
-                        // Fallback to mock data
                         const oViewModel = this.getView().getModel("viewModel");
                         oViewModel.setProperty("/timelineItems", [{
                             ID: "TL001",
@@ -230,11 +251,10 @@ sap.ui.define([
                             status: "Success",
                             icon: "sap-icon://employee-approvals"
                         }]);
-                        resolve(); // Resolve to prevent blocking
+                        resolve();
                     }.bind(this));
                 } catch (oError) {
                     Log.error("Error in _loadTimeline: " + oError.message);
-                    // Fallback to mock data
                     const oViewModel = this.getView().getModel("viewModel");
                     oViewModel.setProperty("/timelineItems", [{
                         ID: "TL001",
@@ -247,7 +267,7 @@ sap.ui.define([
                         status: "Success",
                         icon: "sap-icon://employee-approvals"
                     }]);
-                    resolve(); // Resolve to prevent blocking
+                    resolve();
                 }
             });
         },
@@ -257,7 +277,24 @@ sap.ui.define([
                 try {
                     const oODataModel = this.getOwnerComponent().getModel("catalog");
                     if (!oODataModel) {
-                        throw new Error("OData model 'catalog' not found");
+                        Log.error("OData model 'catalog' not found during _loadApproverLog");
+                        const oViewModel = this.getView().getModel("viewModel");
+                        oViewModel.setProperty("/approverLog", [
+                            {
+                                approver: "Approver 1",
+                                action: "Approved",
+                                date: "2025-02-01T10:00:00Z",
+                                comments: "Looks good"
+                            },
+                            {
+                                approver: "Approver 2",
+                                action: "Reviewed",
+                                date: "2025-02-02T10:00:00Z",
+                                comments: "Needs more info"
+                            }
+                        ]);
+                        resolve();
+                        return;
                     }
 
                     const aFilters = [new Filter("requestNo/requestNo", FilterOperator.EQ, sRequestNo)];
@@ -318,6 +355,7 @@ sap.ui.define([
                     }.bind(this));
                 } catch (oError) {
                     Log.error("Error in _loadApproverLog: " + oError.message);
+                    romper
                     const oViewModel = this.getView().getModel("viewModel");
                     oViewModel.setProperty("/approverLog", [
                         {
@@ -343,7 +381,22 @@ sap.ui.define([
                 try {
                     const oODataModel = this.getOwnerComponent().getModel("catalog");
                     if (!oODataModel) {
-                        throw new Error("OData model 'catalog' not found");
+                        Log.error("OData model 'catalog' not found during _loadApproverList");
+                        const oViewModel = this.getView().getModel("viewModel");
+                        oViewModel.setProperty("/approverList", [
+                            {
+                                approver: "Approver 1",
+                                role: "First Approver",
+                                status: "Completed"
+                            },
+                            {
+                                approver: "Approver 2",
+                                role: "Final Approver",
+                                status: "Pending"
+                            }
+                        ]);
+                        resolve();
+                        return;
                     }
 
                     const aFilters = [new Filter("requestNo/requestNo", FilterOperator.EQ, sRequestNo)];
@@ -422,7 +475,24 @@ sap.ui.define([
                 try {
                     const oODataModel = this.getOwnerComponent().getModel("catalog");
                     if (!oODataModel) {
-                        throw new Error("OData model 'catalog' not found");
+                        Log.error("OData model 'catalog' not found during _loadReqSeqTracker");
+                        const oViewModel = this.getView().getModel("viewModel");
+                        oViewModel.setProperty("/reqSeqTracker", [
+                            {
+                                sequence: "1",
+                                action: "Created",
+                                date: "2025-02-01T10:00:00Z",
+                                user: "User1"
+                            },
+                            {
+                                sequence: "2",
+                                action: "Submitted",
+                                date: "2025-02-02T10:00:00Z",
+                                user: "User1"
+                            }
+                        ]);
+                        resolve();
+                        return;
                     }
 
                     const aFilters = [new Filter("reqseqTracker/requestNo", FilterOperator.EQ, sRequestNo)];
@@ -539,16 +609,32 @@ sap.ui.define([
         _loadRequestDetails: function (sRequestNo) {
             return new Promise((resolve, reject) => {
                 try {
-                    // Get the OData V4 model named "catalog" from the component
                     const oODataModel = this.getOwnerComponent().getModel("catalog");
                     if (!oODataModel) {
-                        throw new Error("OData model 'catalog' not found");
+                        Log.error("OData model 'catalog' not found during _loadRequestDetails");
+                        const oViewModel = this.getView().getModel("viewModel");
+                        const oRequest = {
+                            requestNo: sRequestNo,
+                            createdBy: "Buyer1",
+                            createdOn: "Feb 02, 2025",
+                            status: "Pending Request",
+                            remarks: "Awaiting approval",
+                            PendingWith: "Manager1",
+                            RequestAging: "10 Days",
+                            dcnrFrom: 10,
+                            dcnrTo: 20,
+                            attachments: []
+                        };
+                        const bEditable = oRequest.status === "Draft" || oRequest.status === "Send Back";
+                        oViewModel.setProperty("/request", oRequest);
+                        oViewModel.setProperty("/editable", bEditable);
+                        this._updateMicroProcessFlow(oRequest.status);
+                        resolve();
+                        return;
                     }
 
-                    // Create a context binding for the specific request
                     const oBinding = oODataModel.bindContext(`/Requests(${sRequestNo})`);
 
-                    // Request the context (data) from the binding
                     oBinding.requestObject().then(function (oData) {
                         const oViewModel = this.getView().getModel("viewModel");
                         const oRequest = {
@@ -571,7 +657,6 @@ sap.ui.define([
                         resolve();
                     }.bind(this)).catch(function (oError) {
                         Log.error("Failed to fetch request details: " + oError.message);
-                        // Fallback to mock data
                         const oViewModel = this.getView().getModel("viewModel");
                         const oRequest = {
                             requestNo: sRequestNo,
@@ -589,11 +674,10 @@ sap.ui.define([
                         oViewModel.setProperty("/request", oRequest);
                         oViewModel.setProperty("/editable", bEditable);
                         this._updateMicroProcessFlow(oRequest.status);
-                        resolve(); // Resolve to prevent blocking
+                        resolve();
                     }.bind(this));
                 } catch (oError) {
                     Log.error("Error in _loadRequestDetails: " + oError.message);
-                    // Fallback to mock data
                     const oViewModel = this.getView().getModel("viewModel");
                     const oRequest = {
                         requestNo: sRequestNo,
@@ -611,7 +695,7 @@ sap.ui.define([
                     oViewModel.setProperty("/request", oRequest);
                     oViewModel.setProperty("/editable", bEditable);
                     this._updateMicroProcessFlow(oRequest.status);
-                    resolve(); // Resolve to prevent blocking
+                    resolve();
                 }
             });
         },
@@ -690,17 +774,24 @@ sap.ui.define([
                 try {
                     const oODataModel = this.getOwnerComponent().getModel("catalog");
                     if (!oODataModel) {
-                        throw new Error("OData model 'catalog' not found");
+                        Log.error("OData model 'catalog' not found during _saveRequest");
+                        const oComponentModel = this.getOwnerComponent().getModel();
+                        const aRequests = oComponentModel.getProperty("/requests") || [];
+                        const iIndex = aRequests.findIndex(req => req.requestNo === oRequest.requestNo);
+                        if (iIndex >= 0) {
+                            aRequests[iIndex] = { ...aRequests[iIndex], ...oRequest };
+                            oComponentModel.setProperty("/requests", aRequests);
+                        }
+                        resolve();
+                        return;
                     }
 
-                    // Update the request via OData
                     const oBinding = oODataModel.bindContext(`/Requests(${oRequest.requestNo})`);
                     oBinding.setProperty("dcnrFrom", oRequest.dcnrFrom);
                     oBinding.setProperty("dcnrTo", oRequest.dcnrTo);
                     oBinding.setProperty("remarks", oRequest.remarks);
 
                     oODataModel.submitBatch("updateGroup").then(() => {
-                        // Update local model
                         const oComponentModel = this.getOwnerComponent().getModel();
                         const aRequests = oComponentModel.getProperty("/requests") || [];
                         const iIndex = aRequests.findIndex(req => req.requestNo === oRequest.requestNo);
@@ -710,9 +801,11 @@ sap.ui.define([
                         }
                         resolve();
                     }).catch(oError => {
+                        Log.error("OData save request failed: " + oError.message);
                         reject(oError);
                     });
                 } catch (oError) {
+                    Log.error("Error in _saveRequest: " + oError.message);
                     reject(oError);
                 }
             });
@@ -759,17 +852,29 @@ sap.ui.define([
                 try {
                     const oODataModel = this.getOwnerComponent().getModel("catalog");
                     if (!oODataModel) {
-                        throw new Error("OData model 'catalog' not found");
+                        Log.error("OData model 'catalog' not found during _updateRequestStatus");
+                        const oComponentModel = this.getOwnerComponent().getModel();
+                        const aRequests = oComponentModel.getProperty("/requests") || [];
+                        const iIndex = aRequests.findIndex(req => req.requestNo === sRequestNo);
+                        if (iIndex >= 0) {
+                            aRequests[iIndex] = {
+                                ...aRequests[iIndex],
+                                status: sStatus,
+                                remarks: sRemarks,
+                                PendingWith: sStatus === "Send Back" ? aRequests[iIndex].createdBy : ""
+                            };
+                            oComponentModel.setProperty("/requests", aRequests);
+                        }
+                        resolve();
+                        return;
                     }
 
-                    // Update the request status via OData
                     const oBinding = oODataModel.bindContext(`/Requests(${sRequestNo})`);
                     oBinding.setProperty("status", sStatus);
                     oBinding.setProperty("remarks", sRemarks);
                     oBinding.setProperty("PendingWith", sStatus === "Send Back" ? oBinding.getObject().createdBy : "");
 
                     oODataModel.submitBatch("updateGroup").then(() => {
-                        // Update local model
                         const oComponentModel = this.getOwnerComponent().getModel();
                         const aRequests = oComponentModel.getProperty("/requests") || [];
                         const iIndex = aRequests.findIndex(req => req.requestNo === sRequestNo);
@@ -784,9 +889,11 @@ sap.ui.define([
                         }
                         resolve();
                     }).catch(oError => {
+                        Log.error("OData update request status failed: " + oError.message);
                         reject(oError);
                     });
                 } catch (oError) {
+                    Log.error("Error in _updateRequestStatus: " + oError.message);
                     reject(oError);
                 }
             });
@@ -794,7 +901,11 @@ sap.ui.define([
 
         onDownloadFile: function (oEvent) {
             const oItem = oEvent.getSource().getBindingContext("viewModel").getObject();
-            MessageToast.show("Downloading file: " + oItem.fileName);
+            if (oItem && oItem.fileName) {
+                MessageToast.show("Downloading file: " + oItem.fileName);
+            } else {
+                MessageBox.error("No file selected for download.");
+            }
         },
 
         onDetailsTabSelect: function (oEvent) {
@@ -806,6 +917,11 @@ sap.ui.define([
             const oItem = oEvent.getSource();
             const sTooltip = oItem.getTooltip();
 
+            if (!sTooltip) {
+                MessageBox.error("No tooltip available for this item.");
+                return;
+            }
+
             if (!this._oOrderStatusDialog) {
                 Fragment.load({
                     id: this.getView().getId(),
@@ -816,7 +932,8 @@ sap.ui.define([
                     this.getView().addDependent(this._oOrderStatusDialog);
                     this._updateOrderStatusDialog(sTooltip);
                     this._oOrderStatusDialog.open();
-                }).catch(() => {
+                }).catch(oError => {
+                    Log.error("Error loading OrderStatusDialog: " + oError.message);
                     MessageBox.error("Error loading dialog");
                 });
             } else {
@@ -827,21 +944,34 @@ sap.ui.define([
 
         _updateOrderStatusDialog: function (sTooltip) {
             if (this._oOrderStatusDialog) {
-                const oTitle = this._oOrderStatusDialog.getContent()[0].getItems()[0].getItems()[1];
-                const oText = this._oOrderStatusDialog.getContent()[0].getItems()[1];
-                oTitle.setText(sTooltip);
-                oText.setText(`Details for ${sTooltip}`);
+                const oContent = this._oOrderStatusDialog.getContent();
+                if (oContent && oContent.length > 0) {
+                    const oItems = oContent[0].getItems();
+                    if (oItems && oItems.length >= 2) {
+                        const oTitle = oItems[0].getItems()[1];
+                        const oText = oItems[1];
+                        oTitle.setText(sTooltip);
+                        oText.setText(`Details for ${sTooltip}`);
+                    } else {
+                        Log.error("OrderStatusDialog content structure is incorrect.");
+                    }
+                } else {
+                    Log.error("OrderStatusDialog has no content.");
+                }
+            } else {
+                Log.error("OrderStatusDialog is not initialized.");
             }
         },
 
         onCloseOrderStatus: function () {
             if (this._oOrderStatusDialog) {
                 this._oOrderStatusDialog.close();
+            } else {
+                MessageBox.error("Order Status Dialog not found.");
             }
         }
     });
 });
-
 
 
 UPDATED CODE 2 
