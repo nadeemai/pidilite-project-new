@@ -43,9 +43,15 @@ sap.ui.define([
                 uploadedFiles: [],
                 uploadedFilesCount: 0,
                 editable: true,
-                isLoading: true
+                isLoading: true,
+                standardReasons: [],
+                salesGroups: [],
+                divisions: []
             });
             this.getView().setModel(oViewModel, "viewModel");
+
+            // Load static data from backend
+            this._loadStaticData();
 
             // Initialize micro process flow data
             this._initMicroProcessFlow();
@@ -54,80 +60,185 @@ sap.ui.define([
             this.getRouter().getRoute("requestDetails").attachPatternMatched(this._onRouteMatched, this);
         },
 
+        _loadStaticData: function () {
+            const oODataModel = this.getOwnerComponent().getModel("catalog");
+            const oViewModel = this.getView().getModel("viewModel");
+
+            if (!oODataModel) {
+                Log.error("OData model 'catalog' not found during _loadStaticData");
+                // Fallback data
+                oViewModel.setProperty("/standardReasons", [
+                    { key: "REASON1", text: "Price Adjustment" },
+                    { key: "REASON2", text: "Price Change" },
+                    { key: "REASON3", text: "Price Update" }
+                ]);
+                oViewModel.setProperty("/salesGroups", [
+                    { key: "SG1", text: "Sales Group 1" },
+                    { key: "SG2", text: "Sales Group 2" },
+                    { key: "SG3", text: "Sales Group 3" }
+                ]);
+                oViewModel.setProperty("/divisions", [
+                    { key: "DIV1", text: "Division 1" },
+                    { key: "DIV2", text: "Division 2" },
+                    { key: "DIV3", text: "Division 3" }
+                ]);
+                return;
+            }
+
+            // Load Standard Reasons
+            const oStandardReasonsBinding = oODataModel.bindList("/StandardReasons");
+            oStandardReasonsBinding.requestContexts(0, 100).then(function (aContexts) {
+                const aStandardReasons = aContexts.map(oContext => {
+                    const oData = oContext.getObject();
+                    return {
+                        key: oData.reasonCode,
+                        text: oData.reasonDescription
+                    };
+                });
+                oViewModel.setProperty("/standardReasons", aStandardReasons.length > 0 ? aStandardReasons : [
+                    { key: "REASON1", text: "Price Adjustment" },
+                    { key: "REASON2", text: "Price Change" },
+                    { key: "REASON3", text: "Price Update" }
+                ]);
+            }).catch(function (oError) {
+                Log.error("Failed to fetch Standard Reasons: " + oError.message);
+                oViewModel.setProperty("/standardReasons", [
+                    { key: "REASON1", text: "Price Adjustment" },
+                    { key: "REASON2", text: "Price Change" },
+                    { key: "REASON3", text: "Price Update" }
+                ]);
+            });
+
+            // Load Sales Groups
+            const oSalesGroupsBinding = oODataModel.bindList("/SalesGroups");
+            oSalesGroupsBinding.requestContexts(0, 100).then(function (aContexts) {
+                const aSalesGroups = aContexts.map(oContext => {
+                    const oData = oContext.getObject();
+                    return {
+                        key: oData.salesGroupCode,
+                        text: oData.salesGroupDescription
+                    };
+                });
+                oViewModel.setProperty("/salesGroups", aSalesGroups.length > 0 ? aSalesGroups : [
+                    { key: "SG1", text: "Sales Group 1" },
+                    { key: "SG2", text: "Sales Group 2" },
+                    { key: "SG3", text: "Sales Group 3" }
+                ]);
+            }).catch(function (oError) {
+                Log.error("Failed to fetch Sales Groups: " + oError.message);
+                oViewModel.setProperty("/salesGroups", [
+                    { key: "SG1", text: "Sales Group 1" },
+                    { key: "SG2", text: "Sales Group 2" },
+                    { key: "SG3", text: "Sales Group 3" }
+                ]);
+            });
+
+            // Load Divisions
+            const oDivisionsBinding = oODataModel.bindList("/Divisions");
+            oDivisionsBinding.requestContexts(0, 100).then(function (aContexts) {
+                const aDivisions = aContexts.map(oContext => {
+                    const oData = oContext.getObject();
+                    return {
+                        key: oData.divisionCode,
+                        text: oData.divisionDescription
+                    };
+                });
+                oViewModel.setProperty("/divisions", aDivisions.length > 0 ? aDivisions : [
+                    { key: "DIV1", text: "Division 1" },
+                    { key: "DIV2", text: "Division 2" },
+                    { key: "DIV3", text: "Division 3" }
+                ]);
+            }).catch(function (oError) {
+                Log.error("Failed to fetch Divisions: " + oError.message);
+                oViewModel.setProperty("/divisions", [
+                    { key: "DIV1", text: "Division 1" },
+                    { key: "DIV2", text: "Division 2" },
+                    { key: "DIV3", text: "Division 3" }
+                ]);
+            });
+        },
+
         getRouter: function () {
             return UIComponent.getRouterFor(this);
         },
 
         _initMicroProcessFlow: function () {
+            const oViewModel = this.getView().getModel("viewModel");
+            // Initialize microProcessItems to match the view binding
+            const aMicroProcessItems = [
+                { state: "Success", tooltip: "Step 1: My Draft Request" },
+                { state: "Warning", tooltip: "Step 2: Send Back Request" },
+                { state: "Success", tooltip: "Step 3: Rejected Request" },
+                { state: "Warning", tooltip: "Step 4: In Progress Request" },
+                { state: "Error", tooltip: "Step 5: All Request" }
+            ];
+            oViewModel.setProperty("/microProcessItems", aMicroProcessItems);
+
             const oMicroProcessFlow = this.byId("microProcessFlow");
-            if (oMicroProcessFlow) {
-                const aItems = oMicroProcessFlow.getContent();
-                aItems.forEach(function (oItem) {
-                    oItem.addStyleClass("customProcessStep");
-                });
-            }
+            // if (oMicroProcessFlow) {
+            //     // const aItems = oMicroProcessFlow.getItems();
+            //     // aItems.forEach(function (oItem) {
+            //     //     oItem.addStyleClass("customProcessStep");
+            //     // });
+            // }
         },
 
         _loadMaterialPriceLot: function (sRequestNo) {
             return new Promise((resolve, reject) => {
                 try {
-                    // Get the OData V4 model named "catalog" from the component
                     const oODataModel = this.getOwnerComponent().getModel("catalog");
                     if (!oODataModel) {
                         Log.error("OData model 'catalog' not found during _loadMaterialPriceLot");
                         const oViewModel = this.getView().getModel("viewModel");
                         oViewModel.setProperty("/priceDetails", [{
                             ID: "PD001",
-                            Material: "MAT001",
-                            PriceLot: "PL01",
-                            PriceLotDescription: "Standard Price Lot",
-                            UoM: "EA",
-                            IndicativeMRP: 50.00,
-                            StartDate: "2025-01-01",
-                            EndDate: "2025-12-31",
-                            DefaultPriceLotForMaterial: "X"
+                            material: "MAT001",
+                            priceLot: "PL01",
+                            priceLotDescription: "Standard Price Lot",
+                            uom: "EA",
+                            indicativeMRP: 50.00,
+                            startDate: "2025-01-01",
+                            endDate: "2025-12-31",
+                            defaultPrice: "X"
                         }]);
                         resolve();
                         return;
                     }
 
-                    // Create a list binding for MaterialPriceLot with requestNo filter
                     const aFilters = [new Filter("requestNo/requestNo", FilterOperator.EQ, sRequestNo)];
                     const oBinding = oODataModel.bindList("/MaterialPriceLot", undefined, undefined, aFilters, {
                         $top: 100,
                         $skip: 0
                     });
 
-                    // Request contexts (data) from the binding
                     oBinding.requestContexts(0, 100).then(function (aContexts) {
                         const oViewModel = this.getView().getModel("viewModel");
                         const aPriceDetails = aContexts.map(oContext => {
                             const oData = oContext.getObject();
                             return {
                                 ID: oData.ID,
-                                Material: oData.Material,
-                                PriceLot: oData.PriceLot,
-                                PriceLotDescription: oData.PriceLotDescription,
-                                UoM: oData.UoM,
-                                IndicativeMRP: oData.IndicativeMRP,
-                                StartDate: oData.StartDate,
-                                EndDate: oData.EndDate,
-                                DefaultPriceLotForMaterial: oData.DefaultPriceLotForMaterial
+                                material: oData.Material,
+                                priceLot: oData.PriceLot,
+                                priceLotDescription: oData.PriceLotDescription,
+                                uom: oData.UoM,
+                                indicativeMRP: oData.IndicativeMRP,
+                                startDate: oData.StartDate,
+                                endDate: oData.EndDate,
+                                defaultPrice: oData.DefaultPriceLotForMaterial
                             };
                         });
 
-                        // Fallback to mock data if no results are returned
                         if (aPriceDetails.length === 0) {
                             aPriceDetails.push({
                                 ID: "PD001",
-                                Material: "MAT001",
-                                PriceLot: "PL01",
-                                PriceLotDescription: "Standard Price Lot",
-                                UoM: "EA",
-                                IndicativeMRP: 50.00,
-                                StartDate: "2025-01-01",
-                                EndDate: "2025-12-31",
-                                DefaultPriceLotForMaterial: "X"
+                                material: "MAT001",
+                                priceLot: "PL01",
+                                priceLotDescription: "Standard Price Lot",
+                                uom: "EA",
+                                indicativeMRP: 50.00,
+                                startDate: "2025-01-01",
+                                endDate: "2025-12-31",
+                                defaultPrice: "X"
                             });
                         }
 
@@ -138,14 +249,14 @@ sap.ui.define([
                         const oViewModel = this.getView().getModel("viewModel");
                         oViewModel.setProperty("/priceDetails", [{
                             ID: "PD001",
-                            Material: "MAT001",
-                            PriceLot: "PL01",
-                            PriceLotDescription: "Standard Price Lot",
-                            UoM: "EA",
-                            IndicativeMRP: 50.00,
-                            StartDate: "2025-01-01",
-                            EndDate: "2025-12-31",
-                            DefaultPriceLotForMaterial: "X"
+                            material: "MAT001",
+                            priceLot: "PL01",
+                            priceLotDescription: "Standard Price Lot",
+                            uom: "EA",
+                            indicativeMRP: 50.00,
+                            startDate: "2025-01-01",
+                            endDate: "2025-12-31",
+                            defaultPrice: "X"
                         }]);
                         resolve();
                     }.bind(this));
@@ -154,14 +265,14 @@ sap.ui.define([
                     const oViewModel = this.getView().getModel("viewModel");
                     oViewModel.setProperty("/priceDetails", [{
                         ID: "PD001",
-                        Material: "MAT001",
-                        PriceLot: "PL01",
-                        PriceLotDescription: "Standard Price Lot",
-                        UoM: "EA",
-                        IndicativeMRP: 50.00,
-                        StartDate: "2025-01-01",
-                        EndDate: "2025-12-31",
-                        DefaultPriceLotForMaterial: "X"
+                        material: "MAT001",
+                        priceLot: "PL01",
+                        priceLotDescription: "Standard Price Lot",
+                        uom: "EA",
+                        indicativeMRP: 50.00,
+                        startDate: "2025-01-01",
+                        endDate: "2025-12-31",
+                        defaultPrice: "X"
                     }]);
                     resolve();
                 }
@@ -172,13 +283,15 @@ sap.ui.define([
             return new Promise((resolve, reject) => {
                 try {
                     const oODataModel = this.getOwnerComponent().getModel("catalog");
+                    const oDateFormat = DateFormat.getDateTimeInstance({ pattern: "MMM dd, yyyy, HH:mm:ss" });
+
                     if (!oODataModel) {
                         Log.error("OData model 'catalog' not found during _loadTimeline");
                         const oViewModel = this.getView().getModel("viewModel");
                         oViewModel.setProperty("/timelineItems", [{
                             ID: "TL001",
                             requestNo: sRequestNo,
-                            dateTime: "2025-02-01T10:00:00Z",
+                            dateTime: oDateFormat.format(new Date("2025-02-01T10:00:00Z")),
                             title: "Request Created",
                             text: "Request was created by Buyer1",
                             userName: "Buyer1",
@@ -211,7 +324,7 @@ sap.ui.define([
                             return {
                                 ID: oData.ID,
                                 requestNo: oData.requestNo.requestNo,
-                                dateTime: oData.updatedOn,
+                                dateTime: oDateFormat.format(new Date(oData.updatedOn)),
                                 title: oData.status,
                                 text: `${oData.role} - ${oData.approver}`,
                                 userName: oData.approver,
@@ -225,7 +338,7 @@ sap.ui.define([
                             aTimelineItems.push({
                                 ID: "TL001",
                                 requestNo: sRequestNo,
-                                dateTime: "2025-02-01T10:00:00Z",
+                                dateTime: oDateFormat.format(new Date("2025-02-01T10:00:00Z")),
                                 title: "Request Created",
                                 text: "Request was created by Buyer1",
                                 userName: "Buyer1",
@@ -243,7 +356,7 @@ sap.ui.define([
                         oViewModel.setProperty("/timelineItems", [{
                             ID: "TL001",
                             requestNo: sRequestNo,
-                            dateTime: "2025-02-01T10:00:00Z",
+                            dateTime: oDateFormat.format(new Date("2025-02-01T10:00:00Z")),
                             title: "Request Created",
                             text: "Request was created by Buyer1",
                             userName: "Buyer1",
@@ -256,10 +369,11 @@ sap.ui.define([
                 } catch (oError) {
                     Log.error("Error in _loadTimeline: " + oError.message);
                     const oViewModel = this.getView().getModel("viewModel");
+                    const oDateFormat = DateFormat.getDateTimeInstance({ pattern: "MMM dd, yyyy, HH:mm:ss" });
                     oViewModel.setProperty("/timelineItems", [{
                         ID: "TL001",
                         requestNo: sRequestNo,
-                        dateTime: "2025-02-01T10:00:00Z",
+                        dateTime: oDateFormat.format(new Date("2025-02-01T10:00:00Z")),
                         title: "Request Created",
                         text: "Request was created by Buyer1",
                         userName: "Buyer1",
@@ -355,7 +469,6 @@ sap.ui.define([
                     }.bind(this));
                 } catch (oError) {
                     Log.error("Error in _loadApproverLog: " + oError.message);
-                    romper
                     const oViewModel = this.getView().getModel("viewModel");
                     oViewModel.setProperty("/approverLog", [
                         {
@@ -575,14 +688,7 @@ sap.ui.define([
 
         _onRouteMatched: function (oEvent) {
             const sRequestNo = oEvent.getParameter("arguments").requestNo;
-            const oComponentModel = this.getOwnerComponent().getModel();
             const oViewModel = this.getView().getModel("viewModel");
-
-            if (!oComponentModel) {
-                MessageToast.show("Component model not found");
-                this.onNavBack();
-                return;
-            }
 
             oViewModel.setProperty("/isLoading", true);
 
@@ -610,9 +716,9 @@ sap.ui.define([
             return new Promise((resolve, reject) => {
                 try {
                     const oODataModel = this.getOwnerComponent().getModel("catalog");
+                    const oViewModel = this.getView().getModel("viewModel");
                     if (!oODataModel) {
                         Log.error("OData model 'catalog' not found during _loadRequestDetails");
-                        const oViewModel = this.getView().getModel("viewModel");
                         const oRequest = {
                             requestNo: sRequestNo,
                             createdBy: "Buyer1",
@@ -623,7 +729,12 @@ sap.ui.define([
                             RequestAging: "10 Days",
                             dcnrFrom: 10,
                             dcnrTo: 20,
-                            attachments: []
+                            attachments: [],
+                            referenceNo: "REF001",
+                            division: "DIV1",
+                            salesGroup: "SG1",
+                            standardReason: "REASON1",
+                            creatorComment: "Initial request"
                         };
                         const bEditable = oRequest.status === "Draft" || oRequest.status === "Send Back";
                         oViewModel.setProperty("/request", oRequest);
@@ -636,7 +747,6 @@ sap.ui.define([
                     const oBinding = oODataModel.bindContext(`/Requests(${sRequestNo})`);
 
                     oBinding.requestObject().then(function (oData) {
-                        const oViewModel = this.getView().getModel("viewModel");
                         const oRequest = {
                             requestNo: oData.requestNo,
                             createdBy: oData.createdBy || "Unknown",
@@ -647,7 +757,12 @@ sap.ui.define([
                             RequestAging: oData.RequestAging,
                             dcnrFrom: oData.dcnrFrom,
                             dcnrTo: oData.dcnrTo,
-                            attachments: oData.attachments || []
+                            attachments: oData.attachments || [],
+                            referenceNo: oData.referenceNo || "REF001",
+                            division: oData.division || "DIV1",
+                            salesGroup: oData.salesGroup || "SG1",
+                            standardReason: oData.standardReason || "REASON1",
+                            creatorComment: oData.creatorComment || "Initial request"
                         };
 
                         const bEditable = oRequest.status === "Draft" || oRequest.status === "Send Back";
@@ -657,7 +772,6 @@ sap.ui.define([
                         resolve();
                     }.bind(this)).catch(function (oError) {
                         Log.error("Failed to fetch request details: " + oError.message);
-                        const oViewModel = this.getView().getModel("viewModel");
                         const oRequest = {
                             requestNo: sRequestNo,
                             createdBy: "Buyer1",
@@ -668,7 +782,12 @@ sap.ui.define([
                             RequestAging: "10 Days",
                             dcnrFrom: 10,
                             dcnrTo: 20,
-                            attachments: []
+                            attachments: [],
+                            referenceNo: "REF001",
+                            division: "DIV1",
+                            salesGroup: "SG1",
+                            standardReason: "REASON1",
+                            creatorComment: "Initial request"
                         };
                         const bEditable = oRequest.status === "Draft" || oRequest.status === "Send Back";
                         oViewModel.setProperty("/request", oRequest);
@@ -689,7 +808,12 @@ sap.ui.define([
                         RequestAging: "10 Days",
                         dcnrFrom: 10,
                         dcnrTo: 20,
-                        attachments: []
+                        attachments: [],
+                        referenceNo: "REF001",
+                        division: "DIV1",
+                        salesGroup: "SG1",
+                        standardReason: "REASON1",
+                        creatorComment: "Initial request"
                     };
                     const bEditable = oRequest.status === "Draft" || oRequest.status === "Send Back";
                     oViewModel.setProperty("/request", oRequest);
@@ -706,21 +830,11 @@ sap.ui.define([
 
             if (aMicroProcessItems.length === 0) {
                 aMicroProcessItems = [
-                    {
-                        state: "None",
-                        text: "①",
-                        tooltip: "Step 1: Request Created"
-                    },
-                    {
-                        state: "None",
-                        text: "②",
-                        tooltip: "Step 2: First Approval"
-                    },
-                    {
-                        state: "None",
-                        text: "③",
-                        tooltip: "Step 3: Final Approval"
-                    }
+                    { state: "None", tooltip: "Step 1: My Draft Request" },
+                    { state: "None", tooltip: "Step 2: Send Back Request" },
+                    { state: "None", tooltip: "Step 3: Rejected Request" },
+                    { state: "None", tooltip: "Step 4: In Progress Request" },
+                    { state: "None", tooltip: "Step 5: All Request" }
                 ];
             }
 
@@ -757,8 +871,8 @@ sap.ui.define([
             const oViewModel = this.getView().getModel("viewModel");
             const oRequest = oViewModel.getProperty("/request");
 
-            if (!oRequest.dcnrFrom || !oRequest.dcnrTo) {
-                MessageBox.error("Please fill all mandatory fields: DCNR From and DCNR To.");
+            if (!oRequest.referenceNo || !oRequest.division) {
+                MessageBox.error("Please fill all mandatory fields: Reference No and Division.");
                 return;
             }
 
@@ -775,13 +889,6 @@ sap.ui.define([
                     const oODataModel = this.getOwnerComponent().getModel("catalog");
                     if (!oODataModel) {
                         Log.error("OData model 'catalog' not found during _saveRequest");
-                        const oComponentModel = this.getOwnerComponent().getModel();
-                        const aRequests = oComponentModel.getProperty("/requests") || [];
-                        const iIndex = aRequests.findIndex(req => req.requestNo === oRequest.requestNo);
-                        if (iIndex >= 0) {
-                            aRequests[iIndex] = { ...aRequests[iIndex], ...oRequest };
-                            oComponentModel.setProperty("/requests", aRequests);
-                        }
                         resolve();
                         return;
                     }
@@ -790,15 +897,13 @@ sap.ui.define([
                     oBinding.setProperty("dcnrFrom", oRequest.dcnrFrom);
                     oBinding.setProperty("dcnrTo", oRequest.dcnrTo);
                     oBinding.setProperty("remarks", oRequest.remarks);
+                    oBinding.setProperty("referenceNo", oRequest.referenceNo);
+                    oBinding.setProperty("division", oRequest.division);
+                    oBinding.setProperty("salesGroup", oRequest.salesGroup);
+                    oBinding.setProperty("standardReason", oRequest.standardReason);
+                    oBinding.setProperty("creatorComment", oRequest.creatorComment);
 
                     oODataModel.submitBatch("updateGroup").then(() => {
-                        const oComponentModel = this.getOwnerComponent().getModel();
-                        const aRequests = oComponentModel.getProperty("/requests") || [];
-                        const iIndex = aRequests.findIndex(req => req.requestNo === oRequest.requestNo);
-                        if (iIndex >= 0) {
-                            aRequests[iIndex] = { ...aRequests[iIndex], ...oRequest };
-                            oComponentModel.setProperty("/requests", aRequests);
-                        }
                         resolve();
                     }).catch(oError => {
                         Log.error("OData save request failed: " + oError.message);
@@ -853,18 +958,6 @@ sap.ui.define([
                     const oODataModel = this.getOwnerComponent().getModel("catalog");
                     if (!oODataModel) {
                         Log.error("OData model 'catalog' not found during _updateRequestStatus");
-                        const oComponentModel = this.getOwnerComponent().getModel();
-                        const aRequests = oComponentModel.getProperty("/requests") || [];
-                        const iIndex = aRequests.findIndex(req => req.requestNo === sRequestNo);
-                        if (iIndex >= 0) {
-                            aRequests[iIndex] = {
-                                ...aRequests[iIndex],
-                                status: sStatus,
-                                remarks: sRemarks,
-                                PendingWith: sStatus === "Send Back" ? aRequests[iIndex].createdBy : ""
-                            };
-                            oComponentModel.setProperty("/requests", aRequests);
-                        }
                         resolve();
                         return;
                     }
@@ -875,18 +968,6 @@ sap.ui.define([
                     oBinding.setProperty("PendingWith", sStatus === "Send Back" ? oBinding.getObject().createdBy : "");
 
                     oODataModel.submitBatch("updateGroup").then(() => {
-                        const oComponentModel = this.getOwnerComponent().getModel();
-                        const aRequests = oComponentModel.getProperty("/requests") || [];
-                        const iIndex = aRequests.findIndex(req => req.requestNo === sRequestNo);
-                        if (iIndex >= 0) {
-                            aRequests[iIndex] = {
-                                ...aRequests[iIndex],
-                                status: sStatus,
-                                remarks: sRemarks,
-                                PendingWith: sStatus === "Send Back" ? aRequests[iIndex].createdBy : ""
-                            };
-                            oComponentModel.setProperty("/requests", aRequests);
-                        }
                         resolve();
                     }).catch(oError => {
                         Log.error("OData update request status failed: " + oError.message);
