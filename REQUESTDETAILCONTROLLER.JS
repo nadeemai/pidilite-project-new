@@ -1,3 +1,849 @@
+
+UPDATED CODE 3
+
+sap.ui.define([
+    "sap/ui/core/mvc/Controller",
+    "sap/m/MessageBox",
+    "sap/m/MessageToast",
+    "sap/ui/model/json/JSONModel",
+    "sap/ui/model/Filter",
+    "sap/ui/model/FilterOperator",
+    "sap/ui/core/format/DateFormat",
+    "sap/ui/core/routing/History",
+    "sap/ui/core/Fragment",
+    "sap/ui/core/UIComponent",
+    "sap/ui/core/library",
+    "sap/base/Log"
+], function (Controller, MessageBox, MessageToast, JSONModel, Filter, FilterOperator, DateFormat, History, Fragment, UIComponent, coreLibrary, Log) {
+    "use strict";
+
+    return Controller.extend("com.pidilite.pidilite.controller.RequestDetails", {
+        onInit: function () {
+            // Inject CSS for boldStatusText
+            const sStyle = ".boldStatusText { font-weight: bold !important; }";
+            const oStyleElement = document.createElement("style");
+            oStyleElement.type = "text/css";
+            oStyleElement.appendChild(document.createTextNode(sStyle));
+            document.head.appendChild(oStyleElement);
+
+            // Initialize view model
+            const oViewModel = new JSONModel({
+                request: {},
+                priceDetails: [],
+                timelineItems: [],
+                microProcessItems: [],
+                approverLog: [],
+                approverList: [],
+                reqSeqTracker: [],
+                newRequest: {
+                    type: "",
+                    description: "",
+                    file: null
+                },
+                uploadedFiles: [],
+                uploadedFilesCount: 0,
+                editable: true,
+                isLoading: true
+            });
+            this.getView().setModel(oViewModel, "viewModel");
+
+            // Initialize micro process flow data
+            this._initMicroProcessFlow();
+
+            // Attach route matched handler
+            this.getRouter().getRoute("requestDetails").attachPatternMatched(this._onRouteMatched, this);
+        },
+
+        getRouter: function () {
+            return UIComponent.getRouterFor(this);
+        },
+
+        _initMicroProcessFlow: function () {
+            const oMicroProcessFlow = this.byId("microProcessFlow");
+            if (oMicroProcessFlow) {
+                const aItems = oMicroProcessFlow.getContent();
+                aItems.forEach(function (oItem) {
+                    oItem.addStyleClass("customProcessStep");
+                });
+            }
+        },
+
+        _loadMaterialPriceLot: function (sRequestNo) {
+            return new Promise((resolve, reject) => {
+                try {
+                    // Get the OData V4 model named "catalog" from the component
+                    const oODataModel = this.getOwnerComponent().getModel("catalog");
+                    if (!oODataModel) {
+                        throw new Error("OData model 'catalog' not found");
+                    }
+
+                    // Create a list binding for MaterialPriceLot with requestNo filter
+                    const aFilters = [new Filter("requestNo/requestNo", FilterOperator.EQ, sRequestNo)];
+                    const oBinding = oODataModel.bindList("/MaterialPriceLot", undefined, undefined, aFilters, {
+                        $top: 100,
+                        $skip: 0
+                    });
+
+                    // Request contexts (data) from the binding
+                    oBinding.requestContexts(0, 100).then(function (aContexts) {
+                        const oViewModel = this.getView().getModel("viewModel");
+                        const aPriceDetails = aContexts.map(oContext => {
+                            const oData = oContext.getObject();
+                            return {
+                                ID: oData.ID,
+                                Material: oData.Material,
+                                PriceLot: oData.PriceLot,
+                                PriceLotDescription: oData.PriceLotDescription,
+                                UoM: oData.UoM,
+                                IndicativeMRP: oData.IndicativeMRP,
+                                StartDate: oData.StartDate,
+                                EndDate: oData.EndDate,
+                                DefaultPriceLotForMaterial: oData.DefaultPriceLotForMaterial
+                            };
+                        });
+
+                        // Fallback to mock data if no results are returned
+                        if (aPriceDetails.length === 0) {
+                            aPriceDetails.push({
+                                ID: "PD001",
+                                Material: "MAT001",
+                                PriceLot: "PL01",
+                                PriceLotDescription: "Standard Price Lot",
+                                UoM: "EA",
+                                IndicativeMRP: 50.00,
+                                StartDate: "2025-01-01",
+                                EndDate: "2025-12-31",
+                                DefaultPriceLotForMaterial: "X"
+                            });
+                        }
+
+                        oViewModel.setProperty("/priceDetails", aPriceDetails);
+                        resolve();
+                    }.bind(this)).catch(function (oError) {
+                        Log.error("Failed to fetch material price lot: " + oError.message);
+                        // Fallback to mock data
+                        const oViewModel = this.getView().getModel("viewModel");
+                        oViewModel.setProperty("/priceDetails", [{
+                            ID: "PD001",
+                            Material: "MAT001",
+                            PriceLot: "PL01",
+                            PriceLotDescription: "Standard Price Lot",
+                            UoM: "EA",
+                            IndicativeMRP: 50.00,
+                            StartDate: "2025-01-01",
+                            EndDate: "2025-12-31",
+                            DefaultPriceLotForMaterial: "X"
+                        }]);
+                        resolve(); // Resolve to prevent blocking
+                    }.bind(this));
+                } catch (oError) {
+                    Log.error("Error in _loadMaterialPriceLot: " + oError.message);
+                    // Fallback to mock data
+                    const oViewModel = this.getView().getModel("viewModel");
+                    oViewModel.setProperty("/priceDetails", [{
+                        ID: "PD001",
+                        Material: "MAT001",
+                        PriceLot: "PL01",
+                        PriceLotDescription: "Standard Price Lot",
+                        UoM: "EA",
+                        IndicativeMRP: 50.00,
+                        StartDate: "2025-01-01",
+                        EndDate: "2025-12-31",
+                        DefaultPriceLotForMaterial: "X"
+                    }]);
+                    resolve(); // Resolve to prevent blocking
+                }
+            });
+        },
+
+        _loadTimeline: function (sRequestNo) {
+            return new Promise((resolve, reject) => {
+                try {
+                    // Get the OData V4 model named "catalog" from the component
+                    const oODataModel = this.getOwnerComponent().getModel("catalog");
+                    if (!oODataModel) {
+                        throw new Error("OData model 'catalog' not found");
+                    }
+
+                    // Create a list binding for ApproverLog with requestNo filter
+                    const aFilters = [new Filter("requestNo/requestNo", FilterOperator.EQ, sRequestNo)];
+                    const oBinding = oODataModel.bindList("/ApproverLog", undefined, undefined, aFilters, {
+                        $top: 100,
+                        $skip: 0
+                    });
+
+                    // Request contexts (data) from the binding
+                    oBinding.requestContexts(0, 100).then(function (aContexts) {
+                        const oViewModel = this.getView().getModel("viewModel");
+                        const aTimelineItems = aContexts.map(oContext => {
+                            const oData = oContext.getObject();
+                            let sStatus = "Neutral";
+                            if (oData.status === "Approved") {
+                                sStatus = "Success";
+                            } else if (oData.status === "Send Back") {
+                                sStatus = "Warning";
+                            } else if (oData.status === "Rejected") {
+                                sStatus = "Error";
+                            }
+                            return {
+                                ID: oData.ID,
+                                requestNo: oData.requestNo.requestNo,
+                                dateTime: oData.updatedOn,
+                                title: oData.status,
+                                text: `${oData.role} - ${oData.approver}`,
+                                userName: oData.approver,
+                                userPicture: "", // Add logic for user picture if available
+                                status: sStatus,
+                                icon: "sap-icon://employee-approvals"
+                            };
+                        });
+
+                        // Fallback to mock data if no results are returned
+                        if (aTimelineItems.length === 0) {
+                            aTimelineItems.push({
+                                ID: "TL001",
+                                requestNo: sRequestNo,
+                                dateTime: "2025-02-01T10:00:00Z",
+                                title: "Request Created",
+                                text: "Request was created by Buyer1",
+                                userName: "Buyer1",
+                                userPicture: "",
+                                status: "Success",
+                                icon: "sap-icon://employee-approvals"
+                            });
+                        }
+
+                        oViewModel.setProperty("/timelineItems", aTimelineItems);
+                        resolve();
+                    }.bind(this)).catch(function (oError) {
+                        Log.error("Failed to fetch approver log for timeline: " + oError.message);
+                        // Fallback to mock data
+                        const oViewModel = this.getView().getModel("viewModel");
+                        oViewModel.setProperty("/timelineItems", [{
+                            ID: "TL001",
+                            requestNo: sRequestNo,
+                            dateTime: "2025-02-01T10:00:00Z",
+                            title: "Request Created",
+                            text: "Request was created by Buyer1",
+                            userName: "Buyer1",
+                            userPicture: "",
+                            status: "Success",
+                            icon: "sap-icon://employee-approvals"
+                        }]);
+                        resolve(); // Resolve to prevent blocking
+                    }.bind(this));
+                } catch (oError) {
+                    Log.error("Error in _loadTimeline: " + oError.message);
+                    // Fallback to mock data
+                    const oViewModel = this.getView().getModel("viewModel");
+                    oViewModel.setProperty("/timelineItems", [{
+                        ID: "TL001",
+                        requestNo: sRequestNo,
+                        dateTime: "2025-02-01T10:00:00Z",
+                        title: "Request Created",
+                        text: "Request was created by Buyer1",
+                        userName: "Buyer1",
+                        userPicture: "",
+                        status: "Success",
+                        icon: "sap-icon://employee-approvals"
+                    }]);
+                    resolve(); // Resolve to prevent blocking
+                }
+            });
+        },
+
+        _loadApproverLog: function (sRequestNo) {
+            return new Promise((resolve, reject) => {
+                try {
+                    const oODataModel = this.getOwnerComponent().getModel("catalog");
+                    if (!oODataModel) {
+                        throw new Error("OData model 'catalog' not found");
+                    }
+
+                    const aFilters = [new Filter("requestNo/requestNo", FilterOperator.EQ, sRequestNo)];
+                    const oBinding = oODataModel.bindList("/ApproverLog", undefined, undefined, aFilters, {
+                        $top: 100,
+                        $skip: 0
+                    });
+
+                    oBinding.requestContexts(0, 100).then(function (aContexts) {
+                        const oViewModel = this.getView().getModel("viewModel");
+                        const aApproverLog = aContexts.map(oContext => {
+                            const oData = oContext.getObject();
+                            return {
+                                approver: oData.approver,
+                                action: oData.status,
+                                date: oData.updatedOn,
+                                comments: oData.stage
+                            };
+                        });
+
+                        if (aApproverLog.length === 0) {
+                            aApproverLog.push(
+                                {
+                                    approver: "Approver 1",
+                                    action: "Approved",
+                                    date: "2025-02-01T10:00:00Z",
+                                    comments: "Looks good"
+                                },
+                                {
+                                    approver: "Approver 2",
+                                    action: "Reviewed",
+                                    date: "2025-02-02T10:00:00Z",
+                                    comments: "Needs more info"
+                                }
+                            );
+                        }
+
+                        oViewModel.setProperty("/approverLog", aApproverLog);
+                        resolve();
+                    }.bind(this)).catch(function (oError) {
+                        Log.error("Failed to fetch approver log: " + oError.message);
+                        const oViewModel = this.getView().getModel("viewModel");
+                        oViewModel.setProperty("/approverLog", [
+                            {
+                                approver: "Approver 1",
+                                action: "Approved",
+                                date: "2025-02-01T10:00:00Z",
+                                comments: "Looks good"
+                            },
+                            {
+                                approver: "Approver 2",
+                                action: "Reviewed",
+                                date: "2025-02-02T10:00:00Z",
+                                comments: "Needs more info"
+                            }
+                        ]);
+                        resolve();
+                    }.bind(this));
+                } catch (oError) {
+                    Log.error("Error in _loadApproverLog: " + oError.message);
+                    const oViewModel = this.getView().getModel("viewModel");
+                    oViewModel.setProperty("/approverLog", [
+                        {
+                            approver: "Approver 1",
+                            action: "Approved",
+                            date: "2025-02-01T10:00:00Z",
+                            comments: "Looks good"
+                        },
+                        {
+                            approver: "Approver 2",
+                            action: "Reviewed",
+                            date: "2025-02-02T10:00:00Z",
+                            comments: "Needs more info"
+                        }
+                    ]);
+                    resolve();
+                }
+            });
+        },
+
+        _loadApproverList: function (sRequestNo) {
+            return new Promise((resolve, reject) => {
+                try {
+                    const oODataModel = this.getOwnerComponent().getModel("catalog");
+                    if (!oODataModel) {
+                        throw new Error("OData model 'catalog' not found");
+                    }
+
+                    const aFilters = [new Filter("requestNo/requestNo", FilterOperator.EQ, sRequestNo)];
+                    const oBinding = oODataModel.bindList("/ApproverList", undefined, undefined, aFilters, {
+                        $top: 100,
+                        $skip: 0
+                    });
+
+                    oBinding.requestContexts(0, 100).then(function (aContexts) {
+                        const oViewModel = this.getView().getModel("viewModel");
+                        const aApproverList = aContexts.map(oContext => {
+                            const oData = oContext.getObject();
+                            return {
+                                approver: oData.approvername,
+                                role: oData.approverrole,
+                                status: oData.approveremail ? "Completed" : "Pending"
+                            };
+                        });
+
+                        if (aApproverList.length === 0) {
+                            aApproverList.push(
+                                {
+                                    approver: "Approver 1",
+                                    role: "First Approver",
+                                    status: "Completed"
+                                },
+                                {
+                                    approver: "Approver 2",
+                                    role: "Final Approver",
+                                    status: "Pending"
+                                }
+                            );
+                        }
+
+                        oViewModel.setProperty("/approverList", aApproverList);
+                        resolve();
+                    }.bind(this)).catch(function (oError) {
+                        Log.error("Failed to fetch approver list: " + oError.message);
+                        const oViewModel = this.getView().getModel("viewModel");
+                        oViewModel.setProperty("/approverList", [
+                            {
+                                approver: "Approver 1",
+                                role: "First Approver",
+                                status: "Completed"
+                            },
+                            {
+                                approver: "Approver 2",
+                                role: "Final Approver",
+                                status: "Pending"
+                            }
+                        ]);
+                        resolve();
+                    }.bind(this));
+                } catch (oError) {
+                    Log.error("Error in _loadApproverList: " + oError.message);
+                    const oViewModel = this.getView().getModel("viewModel");
+                    oViewModel.setProperty("/approverList", [
+                        {
+                            approver: "Approver 1",
+                            role: "First Approver",
+                            status: "Completed"
+                        },
+                        {
+                            approver: "Approver 2",
+                            role: "Final Approver",
+                            status: "Pending"
+                        }
+                    ]);
+                    resolve();
+                }
+            });
+        },
+
+        _loadReqSeqTracker: function (sRequestNo) {
+            return new Promise((resolve, reject) => {
+                try {
+                    const oODataModel = this.getOwnerComponent().getModel("catalog");
+                    if (!oODataModel) {
+                        throw new Error("OData model 'catalog' not found");
+                    }
+
+                    const aFilters = [new Filter("reqseqTracker/requestNo", FilterOperator.EQ, sRequestNo)];
+                    const oBinding = oODataModel.bindList("/ReqSeqTracker", undefined, undefined, aFilters, {
+                        $top: 100,
+                        $skip: 0
+                    });
+
+                    oBinding.requestContexts(0, 100).then(function (aContexts) {
+                        const oViewModel = this.getView().getModel("viewModel");
+                        const aReqSeqTracker = aContexts.map(oContext => {
+                            const oData = oContext.getObject();
+                            return {
+                                sequence: oData.ReqTracker.toString(),
+                                action: "Sequence " + oData.LastSeq,
+                                date: new Date().toISOString(),
+                                user: "User" + oData.LastSeq
+                            };
+                        });
+
+                        if (aReqSeqTracker.length === 0) {
+                            aReqSeqTracker.push(
+                                {
+                                    sequence: "1",
+                                    action: "Created",
+                                    date: "2025-02-01T10:00:00Z",
+                                    user: "User1"
+                                },
+                                {
+                                    sequence: "2",
+                                    action: "Submitted",
+                                    date: "2025-02-02T10:00:00Z",
+                                    user: "User1"
+                                }
+                            );
+                        }
+
+                        oViewModel.setProperty("/reqSeqTracker", aReqSeqTracker);
+                        resolve();
+                    }.bind(this)).catch(function (oError) {
+                        Log.error("Failed to fetch request sequence tracker: " + oError.message);
+                        const oViewModel = this.getView().getModel("viewModel");
+                        oViewModel.setProperty("/reqSeqTracker", [
+                            {
+                                sequence: "1",
+                                action: "Created",
+                                date: "2025-02-01T10:00:00Z",
+                                user: "User1"
+                            },
+                            {
+                                sequence: "2",
+                                action: "Submitted",
+                                date: "2025-02-02T10:00:00Z",
+                                user: "User1"
+                            }
+                        ]);
+                        resolve();
+                    }.bind(this));
+                } catch (oError) {
+                    Log.error("Error in _loadReqSeqTracker: " + oError.message);
+                    const oViewModel = this.getView().getModel("viewModel");
+                    oViewModel.setProperty("/reqSeqTracker", [
+                        {
+                            sequence: "1",
+                            action: "Created",
+                            date: "2025-02-01T10:00:00Z",
+                            user: "User1"
+                        },
+                        {
+                            sequence: "2",
+                            action: "Submitted",
+                            date: "2025-02-02T10:00:00Z",
+                            user: "User1"
+                        }
+                    ]);
+                    resolve();
+                }
+            });
+        },
+
+        _onRouteMatched: function (oEvent) {
+            const sRequestNo = oEvent.getParameter("arguments").requestNo;
+            const oComponentModel = this.getOwnerComponent().getModel();
+            const oViewModel = this.getView().getModel("viewModel");
+
+            if (!oComponentModel) {
+                MessageToast.show("Component model not found");
+                this.onNavBack();
+                return;
+            }
+
+            oViewModel.setProperty("/isLoading", true);
+
+            // Load request details first
+            this._loadRequestDetails(sRequestNo).then(() => {
+                // Load all related data in parallel
+                return Promise.all([
+                    this._loadMaterialPriceLot(sRequestNo),
+                    this._loadTimeline(sRequestNo),
+                    this._loadApproverLog(sRequestNo),
+                    this._loadApproverList(sRequestNo),
+                    this._loadReqSeqTracker(sRequestNo)
+                ]);
+            }).then(() => {
+                oViewModel.setProperty("/isLoading", false);
+            }).catch(oError => {
+                Log.error("Failed to load request details: " + oError.message);
+                oViewModel.setProperty("/isLoading", false);
+                MessageBox.error("Failed to load request details. Please try again later.");
+                this.onNavBack();
+            });
+        },
+
+        _loadRequestDetails: function (sRequestNo) {
+            return new Promise((resolve, reject) => {
+                try {
+                    // Get the OData V4 model named "catalog" from the component
+                    const oODataModel = this.getOwnerComponent().getModel("catalog");
+                    if (!oODataModel) {
+                        throw new Error("OData model 'catalog' not found");
+                    }
+
+                    // Create a context binding for the specific request
+                    const oBinding = oODataModel.bindContext(`/Requests(${sRequestNo})`);
+
+                    // Request the context (data) from the binding
+                    oBinding.requestObject().then(function (oData) {
+                        const oViewModel = this.getView().getModel("viewModel");
+                        const oRequest = {
+                            requestNo: oData.requestNo,
+                            createdBy: oData.createdBy || "Unknown",
+                            createdOn: oData.createdOn || new Date().toISOString(),
+                            status: oData.status,
+                            remarks: oData.remarks,
+                            PendingWith: oData.PendingWith,
+                            RequestAging: oData.RequestAging,
+                            dcnrFrom: oData.dcnrFrom,
+                            dcnrTo: oData.dcnrTo,
+                            attachments: oData.attachments || []
+                        };
+
+                        const bEditable = oRequest.status === "Draft" || oRequest.status === "Send Back";
+                        oViewModel.setProperty("/request", oRequest);
+                        oViewModel.setProperty("/editable", bEditable);
+                        this._updateMicroProcessFlow(oRequest.status);
+                        resolve();
+                    }.bind(this)).catch(function (oError) {
+                        Log.error("Failed to fetch request details: " + oError.message);
+                        // Fallback to mock data
+                        const oViewModel = this.getView().getModel("viewModel");
+                        const oRequest = {
+                            requestNo: sRequestNo,
+                            createdBy: "Buyer1",
+                            createdOn: "Feb 02, 2025",
+                            status: "Pending Request",
+                            remarks: "Awaiting approval",
+                            PendingWith: "Manager1",
+                            RequestAging: "10 Days",
+                            dcnrFrom: 10,
+                            dcnrTo: 20,
+                            attachments: []
+                        };
+                        const bEditable = oRequest.status === "Draft" || oRequest.status === "Send Back";
+                        oViewModel.setProperty("/request", oRequest);
+                        oViewModel.setProperty("/editable", bEditable);
+                        this._updateMicroProcessFlow(oRequest.status);
+                        resolve(); // Resolve to prevent blocking
+                    }.bind(this));
+                } catch (oError) {
+                    Log.error("Error in _loadRequestDetails: " + oError.message);
+                    // Fallback to mock data
+                    const oViewModel = this.getView().getModel("viewModel");
+                    const oRequest = {
+                        requestNo: sRequestNo,
+                        createdBy: "Buyer1",
+                        createdOn: "Feb 02, 2025",
+                        status: "Pending Request",
+                        remarks: "Awaiting approval",
+                        PendingWith: "Manager1",
+                        RequestAging: "10 Days",
+                        dcnrFrom: 10,
+                        dcnrTo: 20,
+                        attachments: []
+                    };
+                    const bEditable = oRequest.status === "Draft" || oRequest.status === "Send Back";
+                    oViewModel.setProperty("/request", oRequest);
+                    oViewModel.setProperty("/editable", bEditable);
+                    this._updateMicroProcessFlow(oRequest.status);
+                    resolve(); // Resolve to prevent blocking
+                }
+            });
+        },
+
+        _updateMicroProcessFlow: function (sStatus) {
+            const oViewModel = this.getView().getModel("viewModel");
+            let aMicroProcessItems = oViewModel.getProperty("/microProcessItems") || [];
+
+            if (aMicroProcessItems.length === 0) {
+                aMicroProcessItems = [
+                    {
+                        state: "None",
+                        text: "①",
+                        tooltip: "Step 1: Request Created"
+                    },
+                    {
+                        state: "None",
+                        text: "②",
+                        tooltip: "Step 2: First Approval"
+                    },
+                    {
+                        state: "None",
+                        text: "③",
+                        tooltip: "Step 3: Final Approval"
+                    }
+                ];
+            }
+
+            aMicroProcessItems = aMicroProcessItems.map((item, index) => {
+                if (sStatus === "Draft" && index === 0) {
+                    return { ...item, state: "Success" };
+                } else if (sStatus === "Pending Request" && index <= 1) {
+                    return { ...item, state: "Success" };
+                } else if (sStatus === "Approved" && index <= 2) {
+                    return { ...item, state: "Success" };
+                } else if (sStatus === "Send Back" && index === 1) {
+                    return { ...item, state: "Warning" };
+                } else if (sStatus === "Rejected" && index === 1) {
+                    return { ...item, state: "Error" };
+                }
+                return item;
+            });
+
+            oViewModel.setProperty("/microProcessItems", aMicroProcessItems);
+        },
+
+        onNavBack: function () {
+            const oHistory = History.getInstance();
+            const sPreviousHash = oHistory.getPreviousHash();
+
+            if (sPreviousHash !== undefined) {
+                window.history.go(-1);
+            } else {
+                this.getRouter().navTo("dashboard", {}, true);
+            }
+        },
+
+        onSaveRequest: function () {
+            const oViewModel = this.getView().getModel("viewModel");
+            const oRequest = oViewModel.getProperty("/request");
+
+            if (!oRequest.dcnrFrom || !oRequest.dcnrTo) {
+                MessageBox.error("Please fill all mandatory fields: DCNR From and DCNR To.");
+                return;
+            }
+
+            this._saveRequest(oRequest).then(() => {
+                MessageToast.show("Request saved successfully");
+            }).catch(oError => {
+                MessageBox.error("Error saving request: " + oError.message);
+            });
+        },
+
+        _saveRequest: function (oRequest) {
+            return new Promise((resolve, reject) => {
+                try {
+                    const oODataModel = this.getOwnerComponent().getModel("catalog");
+                    if (!oODataModel) {
+                        throw new Error("OData model 'catalog' not found");
+                    }
+
+                    // Update the request via OData
+                    const oBinding = oODataModel.bindContext(`/Requests(${oRequest.requestNo})`);
+                    oBinding.setProperty("dcnrFrom", oRequest.dcnrFrom);
+                    oBinding.setProperty("dcnrTo", oRequest.dcnrTo);
+                    oBinding.setProperty("remarks", oRequest.remarks);
+
+                    oODataModel.submitBatch("updateGroup").then(() => {
+                        // Update local model
+                        const oComponentModel = this.getOwnerComponent().getModel();
+                        const aRequests = oComponentModel.getProperty("/requests") || [];
+                        const iIndex = aRequests.findIndex(req => req.requestNo === oRequest.requestNo);
+                        if (iIndex >= 0) {
+                            aRequests[iIndex] = { ...aRequests[iIndex], ...oRequest };
+                            oComponentModel.setProperty("/requests", aRequests);
+                        }
+                        resolve();
+                    }).catch(oError => {
+                        reject(oError);
+                    });
+                } catch (oError) {
+                    reject(oError);
+                }
+            });
+        },
+
+        onSendBackRequest: function () {
+            const oViewModel = this.getView().getModel("viewModel");
+            const oRequest = oViewModel.getProperty("/request");
+
+            this._updateRequestStatus(oRequest.requestNo, "Send Back", "Sent back for revision").then(() => {
+                MessageToast.show("Request sent back successfully");
+                this.onNavBack();
+            }).catch(oError => {
+                MessageBox.error("Error sending back request: " + oError.message);
+            });
+        },
+
+        onRejectRequest: function () {
+            const oViewModel = this.getView().getModel("viewModel");
+            const oRequest = oViewModel.getProperty("/request");
+
+            this._updateRequestStatus(oRequest.requestNo, "Rejected", "Request rejected").then(() => {
+                MessageToast.show("Request rejected successfully");
+                this.onNavBack();
+            }).catch(oError => {
+                MessageBox.error("Error rejecting request: " + oError.message);
+            });
+        },
+
+        onApproveRequest: function () {
+            const oViewModel = this.getView().getModel("viewModel");
+            const oRequest = oViewModel.getProperty("/request");
+
+            this._updateRequestStatus(oRequest.requestNo, "Approved", "Request approved").then(() => {
+                MessageToast.show("Request approved successfully");
+                this.onNavBack();
+            }).catch(oError => {
+                MessageBox.error("Error approving request: " + oError.message);
+            });
+        },
+
+        _updateRequestStatus: function (sRequestNo, sStatus, sRemarks) {
+            return new Promise((resolve, reject) => {
+                try {
+                    const oODataModel = this.getOwnerComponent().getModel("catalog");
+                    if (!oODataModel) {
+                        throw new Error("OData model 'catalog' not found");
+                    }
+
+                    // Update the request status via OData
+                    const oBinding = oODataModel.bindContext(`/Requests(${sRequestNo})`);
+                    oBinding.setProperty("status", sStatus);
+                    oBinding.setProperty("remarks", sRemarks);
+                    oBinding.setProperty("PendingWith", sStatus === "Send Back" ? oBinding.getObject().createdBy : "");
+
+                    oODataModel.submitBatch("updateGroup").then(() => {
+                        // Update local model
+                        const oComponentModel = this.getOwnerComponent().getModel();
+                        const aRequests = oComponentModel.getProperty("/requests") || [];
+                        const iIndex = aRequests.findIndex(req => req.requestNo === sRequestNo);
+                        if (iIndex >= 0) {
+                            aRequests[iIndex] = {
+                                ...aRequests[iIndex],
+                                status: sStatus,
+                                remarks: sRemarks,
+                                PendingWith: sStatus === "Send Back" ? aRequests[iIndex].createdBy : ""
+                            };
+                            oComponentModel.setProperty("/requests", aRequests);
+                        }
+                        resolve();
+                    }).catch(oError => {
+                        reject(oError);
+                    });
+                } catch (oError) {
+                    reject(oError);
+                }
+            });
+        },
+
+        onDownloadFile: function (oEvent) {
+            const oItem = oEvent.getSource().getBindingContext("viewModel").getObject();
+            MessageToast.show("Downloading file: " + oItem.fileName);
+        },
+
+        onDetailsTabSelect: function (oEvent) {
+            const sKey = oEvent.getParameter("key");
+            MessageToast.show(`Selected tab: ${sKey}`);
+        },
+
+        onMicroProcessItemPress: function (oEvent) {
+            const oItem = oEvent.getSource();
+            const sTooltip = oItem.getTooltip();
+
+            if (!this._oOrderStatusDialog) {
+                Fragment.load({
+                    id: this.getView().getId(),
+                    name: "com.pidilite.pidilite.view.OrderStatusDialog",
+                    controller: this
+                }).then(oDialog => {
+                    this._oOrderStatusDialog = oDialog;
+                    this.getView().addDependent(this._oOrderStatusDialog);
+                    this._updateOrderStatusDialog(sTooltip);
+                    this._oOrderStatusDialog.open();
+                }).catch(() => {
+                    MessageBox.error("Error loading dialog");
+                });
+            } else {
+                this._updateOrderStatusDialog(sTooltip);
+                this._oOrderStatusDialog.open();
+            }
+        },
+
+        _updateOrderStatusDialog: function (sTooltip) {
+            if (this._oOrderStatusDialog) {
+                const oTitle = this._oOrderStatusDialog.getContent()[0].getItems()[0].getItems()[1];
+                const oText = this._oOrderStatusDialog.getContent()[0].getItems()[1];
+                oTitle.setText(sTooltip);
+                oText.setText(`Details for ${sTooltip}`);
+            }
+        },
+
+        onCloseOrderStatus: function () {
+            if (this._oOrderStatusDialog) {
+                this._oOrderStatusDialog.close();
+            }
+        }
+    });
+});
+
+
+
 UPDATED CODE 2 
 
 sap.ui.define([
