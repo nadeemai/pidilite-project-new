@@ -1,3 +1,589 @@
+
+UPDATED CODE 3
+
+sap.ui.define([
+    "sap/ui/core/mvc/Controller",
+    "sap/m/MessageBox",
+    "sap/m/MessageToast",
+    "sap/ui/model/json/JSONModel",
+    "sap/ui/model/Filter",
+    "sap/ui/model/FilterOperator",
+    "sap/ui/core/format/DateFormat",
+    "sap/ui/core/UIComponent",
+    "sap/base/Log"
+], function (Controller, MessageBox, MessageToast, JSONModel, Filter, FilterOperator, DateFormat, UIComponent, Log) {
+    "use strict";
+
+    return Controller.extend("com.pidilite.pidilite.controller.PidiliteProject", {
+        onInit: function () {
+            // Initialize models
+            this._initModels();
+            
+            // Load initial data
+            this._loadInitialData();
+        },
+
+        _initModels: function () {
+            // Initialize view model for filter, counts, and create request
+            const oViewModel = new JSONModel({
+                filter: {
+                    requestNo: "",
+                    createdBy: "",
+                    createdOn: "",
+                    status: ""
+                },
+                draftCount: 0,
+                sentBackCount: 0,
+                rejectedCount: 0,
+                inProgressCount: 0,
+                approvedCount: 0,
+                allCount: 0,
+                newRequest: {
+                    type: "",
+                    description: "",
+                    file: null
+                },
+                uploadedFiles: [],
+                uploadedFilesCount: 0,
+                isLoading: true
+            });
+            this.getView().setModel(oViewModel, "viewModel");
+
+            // Initialize component model
+            const oComponentModel = new JSONModel({
+                statusItems: [
+                    { key: "", text: "All" },
+                    { key: "Draft", text: "Draft" },
+                    { key: "Send Back", text: "Send Back" },
+                    { key: "Rejected", text: "Rejected" },
+                    { key: "Pending Request", text: "Pending Request" },
+                    { key: "Approved", text: "Approved" }
+                ],
+                requestTypes: [],
+                requests: [],
+                divisions: [],
+                salesGroups: [],
+                standardReasons: []
+            });
+            this.getOwnerComponent().setModel(oComponentModel);
+        },
+
+        _loadInitialData: function () {
+            // Load all necessary data in parallel
+            Promise.all([
+                this._loadRequests(),
+                this._loadRequestTypes(),
+                this._loadDivisions(),
+                this._loadSalesGroups(),
+                this._loadStandardReasons()
+            ]).then(() => {
+                this._updateCounts();
+                this.getView().getModel("viewModel").setProperty("/isLoading", false);
+            }).catch(oError => {
+                Log.error("Failed to load initial data: " + oError.message);
+                this.getView().getModel("viewModel").setProperty("/isLoading", false);
+                MessageBox.error("Failed to load initial data. Please try again later.");
+            });
+        },
+
+        _loadRequests: function () {
+            return new Promise((resolve, reject) => {
+                try {
+                    // Get the OData V4 model named "catalog" from the component
+                    const oODataModel = this.getOwnerComponent().getModel("catalog");
+                    if (!oODataModel) {
+                        throw new Error("OData model 'catalog' not found");
+                    }
+
+                    // Create a list binding for Requests
+                    const oBinding = oODataModel.bindList("/Requests", undefined, undefined, undefined, {
+                        $top: 100,
+                        $skip: 0
+                    });
+
+                    // Request contexts (data) from the binding
+                    oBinding.requestContexts(0, 100).then(function (aContexts) {
+                        const oComponentModel = this.getOwnerComponent().getModel();
+                        const aRequests = aContexts.map(oContext => {
+                            const oData = oContext.getObject();
+                            return {
+                                requestNo: oData.requestNo,
+                                createdBy: oData.createdBy || "Unknown",
+                                createdOn: oData.createdOn || new Date().toISOString(),
+                                status: oData.status,
+                                remarks: oData.remarks,
+                                pendingWith: oData.PendingWith,
+                                requestAging: oData.RequestAging,
+                                dcnrFrom: oData.dcnrFrom,
+                                dcnrTo: oData.dcnrTo,
+                                attachments: oData.attachments || []
+                            };
+                        });
+
+                        // Fallback to mock data if no results are returned
+                        if (aRequests.length === 0) {
+                            aRequests.push({
+                                requestNo: "RM0000001",
+                                createdBy: "Buyer1",
+                                createdOn: "Feb 02, 2025",
+                                status: "Pending Request",
+                                remarks: "Awaiting approval",
+                                pendingWith: "Manager1",
+                                requestAging: "10 Days",
+                                dcnrFrom: 10,
+                                dcnrTo: 20,
+                                attachments: []
+                            });
+                        }
+
+                        oComponentModel.setProperty("/requests", aRequests);
+                        resolve();
+                    }.bind(this)).catch(function (oError) {
+                        Log.error("Failed to fetch requests: " + oError.message);
+                        // Fallback to mock data
+                        const oComponentModel = this.getOwnerComponent().getModel();
+                        oComponentModel.setProperty("/requests", [{
+                            requestNo: "RM0000001",
+                            createdBy: "Buyer1",
+                            createdOn: "Feb 02, 2025",
+                            status: "Pending Request",
+                            remarks: "Awaiting approval",
+                            pendingWith: "Manager1",
+                            requestAging: "10 Days",
+                            dcnrFrom: 10,
+                            dcnrTo: 20,
+                            attachments: []
+                        }]);
+                        resolve(); // Resolve to prevent blocking
+                    }.bind(this));
+                } catch (oError) {
+                    Log.error("Error in _loadRequests: " + oError.message);
+                    // Fallback to mock data
+                    const oComponentModel = this.getOwnerComponent().getModel();
+                    oComponentModel.setProperty("/requests", [{
+                        requestNo: "RM0000001",
+                        createdBy: "Buyer1",
+                        createdOn: "Feb 02, 2025",
+                        status: "Pending Request",
+                        remarks: "Awaiting approval",
+                        pendingWith: "Manager1",
+                        requestAging: "10 Days",
+                        dcnrFrom: 10,
+                        dcnrTo: 20,
+                        attachments: []
+                    }]);
+                    resolve(); // Resolve to prevent blocking
+                }
+            });
+        },
+
+        _loadRequestTypes: function () {
+            return new Promise((resolve, reject) => {
+                setTimeout(() => {
+                    try {
+                        const oComponentModel = this.getOwnerComponent().getModel();
+                        const aRequestTypes = [
+                            { key: "TYPE1", text: "Type 1 Request" },
+                            { key: "TYPE2", text: "Type 2 Request" },
+                            { key: "TYPE3", text: "Type 3 Request" }
+                        ];
+                        oComponentModel.setProperty("/requestTypes", aRequestTypes);
+                        resolve();
+                    } catch (oError) {
+                        reject(oError);
+                    }
+                }, 300);
+            });
+        },
+
+        _loadDivisions: function () {
+            return new Promise((resolve, reject) => {
+                try {
+                    const oODataModel = this.getOwnerComponent().getModel("catalog");
+                    if (!oODataModel) {
+                        throw new Error("OData model 'catalog' not found");
+                    }
+
+                    const oBinding = oODataModel.bindList("/Division", undefined, undefined, [
+                        new Filter("status", FilterOperator.EQ, true)
+                    ], {
+                        $top: 100,
+                        $skip: 0
+                    });
+
+                    oBinding.requestContexts(0, 100).then(function (aContexts) {
+                        const oComponentModel = this.getOwnerComponent().getModel();
+                        const aDivisions = aContexts.map(oContext => {
+                            const oData = oContext.getObject();
+                            return {
+                                key: oData.function,
+                                text: oData.Description
+                            };
+                        });
+
+                        if (aDivisions.length === 0) {
+                            aDivisions.push(
+                                { key: "DIV1", text: "Division 1" },
+                                { key: "DIV2", text: "Division 2" },
+                                { key: "DIV3", text: "Division 3" }
+                            );
+                        }
+
+                        oComponentModel.setProperty("/divisions", aDivisions);
+                        resolve();
+                    }.bind(this)).catch(function (oError) {
+                        Log.error("Failed to fetch divisions: " + oError.message);
+                        const oComponentModel = this.getOwnerComponent().getModel();
+                        oComponentModel.setProperty("/divisions", [
+                            { key: "DIV1", text: "Division 1" },
+                            { key: "DIV2", text: "Division 2" },
+                            { key: "DIV3", text: "Division 3" }
+                        ]);
+                        resolve();
+                    }.bind(this));
+                } catch (oError) {
+                    Log.error("Error in _loadDivisions: " + oError.message);
+                    const oComponentModel = this.getOwnerComponent().getModel();
+                    oComponentModel.setProperty("/divisions", [
+                        { key: "DIV1", text: "Division 1" },
+                        { key: "DIV2", text: "Division 2" },
+                        { key: "DIV3", text: "Division 3" }
+                    ]);
+                    resolve();
+                }
+            });
+        },
+
+        _loadSalesGroups: function () {
+            return new Promise((resolve, reject) => {
+                try {
+                    const oODataModel = this.getOwnerComponent().getModel("catalog");
+                    if (!oODataModel) {
+                        throw new Error("OData model 'catalog' not found");
+                    }
+
+                    const oBinding = oODataModel.bindList("/SalesGroup", undefined, undefined, [
+                        new Filter("status", FilterOperator.EQ, true)
+                    ], {
+                        $top: 100,
+                        $skip: 0
+                    });
+
+                    oBinding.requestContexts(0, 100).then(function (aContexts) {
+                        const oComponentModel = this.getOwnerComponent().getModel();
+                        const aSalesGroups = aContexts.map(oContext => {
+                            const oData = oContext.getObject();
+                            return {
+                                key: oData.function,
+                                text: oData.Description
+                            };
+                        });
+
+                        if (aSalesGroups.length === 0) {
+                            aSalesGroups.push(
+                                { key: "SG1", text: "Sales Group 1" },
+                                { key: "SG2", text: "Sales Group 2" },
+                                { key: "SG3", text: "Sales Group 3" }
+                            );
+                        }
+
+                        oComponentModel.setProperty("/salesGroups", aSalesGroups);
+                        resolve();
+                    }.bind(this)).catch(function (oError) {
+                        Log.error("Failed to fetch sales groups: " + oError.message);
+                        const oComponentModel = this.getOwnerComponent().getModel();
+                        oComponentModel.setProperty("/salesGroups", [
+                            { key: "SG1", text: "Sales Group 1" },
+                            { key: "SG2", text: "Sales Group 2" },
+                            { key: "SG3", text: "Sales Group 3" }
+                        ]);
+                        resolve();
+                    }.bind(this));
+                } catch (oError) {
+                    Log.error("Error in _loadSalesGroups: " + oError.message);
+                    const oComponentModel = this.getOwnerComponent().getModel();
+                    oComponentModel.setProperty("/salesGroups", [
+                        { key: "SG1", text: "Sales Group 1" },
+                        { key: "SG2", text: "Sales Group 2" },
+                        { key: "SG3", text: "Sales Group 3" }
+                    ]);
+                    resolve();
+                }
+            });
+        },
+
+        _loadStandardReasons: function () {
+            return new Promise((resolve, reject) => {
+                try {
+                    const oODataModel = this.getOwnerComponent().getModel("catalog");
+                    if (!oODataModel) {
+                        throw new Error("OData model 'catalog' not found");
+                    }
+
+                    const oBinding = oODataModel.bindList("/StandardReason", undefined, undefined, [
+                        new Filter("status", FilterOperator.EQ, true)
+                    ], {
+                        $top: 100,
+                        $skip: 0
+                    });
+
+                    oBinding.requestContexts(0, 100).then(function (aContexts) {
+                        const oComponentModel = this.getOwnerComponent().getModel();
+                        const aStandardReasons = aContexts.map(oContext => {
+                            const oData = oContext.getObject();
+                            return {
+                                key: oData.function,
+                                text: oData.Description
+                            };
+                        });
+
+                        if (aStandardReasons.length === 0) {
+                            aStandardReasons.push(
+                                { key: "REASON1", text: "Price Adjustment" },
+                                { key: "REASON2", text: "Price Change" },
+                                { key: "REASON3", text: "Price Update" }
+                            );
+                        }
+
+                        oComponentModel.setProperty("/standardReasons", aStandardReasons);
+                        resolve();
+                    }.bind(this)).catch(function (oError) {
+                        Log.error("Failed to fetch standard reasons: " + oError.message);
+                        const oComponentModel = this.getOwnerComponent().getModel();
+                        oComponentModel.setProperty("/standardReasons", [
+                            { key: "REASON1", text: "Price Adjustment" },
+                            { key: "REASON2", text: "Price Change" },
+                            { key: "REASON3", text: "Price Update" }
+                        ]);
+                        resolve();
+                    }.bind(this));
+                } catch (oError) {
+                    Log.error("Error in _loadStandardReasons: " + oError.message);
+                    const oComponentModel = this.getOwnerComponent().getModel();
+                    oComponentModel.setProperty("/standardReasons", [
+                        { key: "REASON1", text: "Price Adjustment" },
+                        { key: "REASON2", text: "Price Change" },
+                        { key: "REASON3", text: "Price Update" }
+                    ]);
+                    resolve();
+                }
+            });
+        },
+
+        getRouter: function () {
+            return UIComponent.getRouterFor(this);
+        },
+
+        _updateCounts: function () {
+            const oComponentModel = this.getOwnerComponent().getModel();
+            const oViewModel = this.getView().getModel("viewModel");
+            const aRequests = oComponentModel.getData().requests || [];
+
+            const oCounts = {
+                draftCount: aRequests.filter(r => r.status === "Draft").length,
+                sentBackCount: aRequests.filter(r => r.status === "Send Back").length,
+                rejectedCount: aRequests.filter(r => r.status === "Rejected").length,
+                inProgressCount: aRequests.filter(r => r.status === "Pending Request").length,
+                approvedCount: aRequests.filter(r => r.status === "Approved").length,
+                allCount: aRequests.length
+            };
+
+            oViewModel.setProperty("/draftCount", oCounts.draftCount);
+            oViewModel.setProperty("/sentBackCount", oCounts.sentBackCount);
+            oViewModel.setProperty("/rejectedCount", oCounts.rejectedCount);
+            oViewModel.setProperty("/inProgressCount", oCounts.inProgressCount);
+            oViewModel.setProperty("/approvedCount", oCounts.approvedCount);
+            oViewModel.setProperty("/allCount", oCounts.allCount);
+        },
+
+        onTilePress: function (oEvent) {
+            const sHeader = oEvent.getSource().getHeader();
+            const oTable = this.byId("dashboardTable");
+            const oBinding = oTable.getBinding("items");
+
+            let aFilters = [];
+            switch (sHeader) {
+                case "My Draft Requests":
+                    aFilters.push(new Filter("status", FilterOperator.EQ, "Draft"));
+                    break;
+                case "Sent Back Requests":
+                    aFilters.push(new Filter("status", FilterOperator.EQ, "Send Back"));
+                    break;
+                case "Rejected Requests":
+                    aFilters.push(new Filter("status", FilterOperator.EQ, "Rejected"));
+                    break;
+                case "In-Progress Requests":
+                    aFilters.push(new Filter("status", FilterOperator.EQ, "Pending Request"));
+                    break;
+                case "Approved Requests":
+                    aFilters.push(new Filter("status", FilterOperator.EQ, "Approved"));
+                    break;
+                case "All Requests":
+                    aFilters = [];
+                    break;
+            }
+
+            oBinding.filter(aFilters);
+            MessageToast.show(`Filtered by ${sHeader}`);
+        },
+
+        onFilterChange: function () {
+            const oTable = this.byId("dashboardTable");
+            const oBinding = oTable.getBinding("items");
+            const oViewModel = this.getView().getModel("viewModel");
+            const oFilters = oViewModel.getProperty("/filter");
+
+            let aFilters = [];
+
+            if (oFilters.requestNo) {
+                aFilters.push(new Filter("requestNo", FilterOperator.Contains, oFilters.requestNo));
+            }
+
+            if (oFilters.createdBy) {
+                aFilters.push(new Filter("createdBy", FilterOperator.Contains, oFilters.createdBy));
+            }
+
+            if (oFilters.createdOn) {
+                aFilters.push(new Filter("createdOn", FilterOperator.EQ, oFilters.createdOn));
+            }
+
+            if (oFilters.status) {
+                aFilters.push(new Filter("status", FilterOperator.EQ, oFilters.status));
+            }
+
+            oBinding.filter(aFilters);
+        },
+
+        onClearFilters: function () {
+            const oViewModel = this.getView().getModel("viewModel");
+            oViewModel.setProperty("/filter", {
+                requestNo: "",
+                createdBy: "",
+                createdOn: "",
+                status: ""
+            });
+
+            this.onFilterChange();
+            MessageToast.show("Filters cleared");
+        },
+
+        onItemPress: function (oEvent) {
+            const oItem = oEvent.getParameter("listItem");
+            const oContext = oItem.getBindingContext();
+            const oData = oContext.getObject();
+
+            this.getRouter().navTo("requestDetails", {
+                requestNo: oData.requestNo
+            });
+        },
+
+        onCreatePress: function () {
+            const oViewModel = this.getView().getModel("viewModel");
+            oViewModel.setProperty("/newRequest", {
+                type: "",
+                description: "",
+                file: null
+            });
+            oViewModel.setProperty("/uploadedFiles", []);
+            oViewModel.setProperty("/uploadedFilesCount", 0);
+            this.byId("createRequestDialog").open();
+        },
+
+        onCreateRequest: function () {
+            const oViewModel = this.getView().getModel("viewModel");
+            const oNewRequest = oViewModel.getProperty("/newRequest");
+            const aUploadedFiles = oViewModel.getProperty("/uploadedFiles");
+
+            if (aUploadedFiles.length === 0) {
+                MessageBox.error("Please upload at least one file before creating the request.");
+                return;
+            }
+
+            this._createNewRequest(oNewRequest, aUploadedFiles).then(sNewRequestNo => {
+                MessageToast.show("Request created successfully");
+                this.byId("createRequestDialog").close();
+                
+                this.getRouter().navTo("requestDetails", {
+                    requestNo: sNewRequestNo
+                });
+            }).catch(oError => {
+                MessageBox.error("Failed to create request: " + oError.message);
+            });
+        },
+
+        _createNewRequest: function (oNewRequest, aUploadedFiles) {
+            return new Promise((resolve, reject) => {
+                try {
+                    const oODataModel = this.getOwnerComponent().getModel("catalog");
+                    if (!oODataModel) {
+                        throw new Error("OData model 'catalog' not found");
+                    }
+
+                    const iNewId = Math.floor(Math.random() * 1000000) + 1;
+                    const sNewRequestNo = "RM" + String(iNewId).padStart(7, "0");
+
+                    const oDateFormat = DateFormat.getDateInstance({ style: "medium" });
+                    const sCurrentDate = oDateFormat.format(new Date());
+
+                    const oRequest = {
+                        requestNo: sNewRequestNo,
+                        createdBy: "Current User",
+                        createdOn: sCurrentDate,
+                        status: "Draft",
+                        remarks: oNewRequest.description || "-",
+                        PendingWith: "-",
+                        RequestAging: "0 Days",
+                        dcnrFrom: 0,
+                        dcnrTo: 0,
+                        attachments: aUploadedFiles.map(file => ({ fileName: file.fileName }))
+                    };
+
+                    // Create new request via OData
+                    const oContext = oODataModel.bindList("/Requests").create(oRequest);
+                    oContext.created().then(() => {
+                        const oComponentModel = this.getOwnerComponent().getModel();
+                        const aRequests = oComponentModel.getProperty("/requests") || [];
+                        aRequests.unshift(oRequest);
+                        oComponentModel.setProperty("/requests", aRequests);
+                        this._updateCounts();
+                        resolve(sNewRequestNo);
+                    }).catch(oError => {
+                        reject(oError);
+                    });
+                } catch (oError) {
+                    reject(oError);
+                }
+            });
+        },
+
+        onCancelCreate: function () {
+            this.byId("createRequestDialog").close();
+        },
+
+        handleUploadComplete: function (oEvent) {
+            const sResponse = oEvent.getParameters().response;
+            const iHttpStatusCode = parseInt(/\d{3}/.exec(sResponse) ? /\d{3}/.exec(sResponse)[0] : 0);
+            const sMessage = iHttpStatusCode === 200 ? "File upload complete (Success)" : "File upload failed (Error)";
+            MessageToast.show(sMessage);
+        },
+
+        handleValueChange: function (oEvent) {
+            const sFileName = oEvent.getParameter("newValue");
+            const oViewModel = this.getView().getModel("viewModel");
+            const aUploadedFiles = oViewModel.getProperty("/uploadedFiles");
+            aUploadedFiles.push({ fileName: sFileName });
+            oViewModel.setProperty("/uploadedFiles", aUploadedFiles);
+            oViewModel.setProperty("/uploadedFilesCount", aUploadedFiles.length);
+            MessageToast.show("File selected: " + sFileName);
+        },
+
+        handleTypeMissmatch: function (oEvent) {
+            const aFileTypes = oEvent.getSource().getFileType().map(sType => "*." + sType);
+            MessageToast.show(`The file type *.${oEvent.getParameter("fileType")} is not supported. Choose one of the following types: ${aFileTypes.join(", ")}`);
+        }
+    });
+});
+
 UPDATED CODE 2
 
 sap.ui.define([
