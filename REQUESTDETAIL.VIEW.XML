@@ -26,13 +26,21 @@ UPDATE CODE
                 <Toolbar id="microProcessToolbar">
                     <HBox id="microProcessHBox" justifyContent="Center">
                         <suite:MicroProcessFlow id="microProcessFlow">
+
                             <suite:content>
+
                                 <suite:MicroProcessFlowItem id="_IDGenMicroProcessFlowItem" state="Success" icon="sap-icon://accept" press="onMicroProcessItemPress" tooltip="Step 1: My Draft Request"/>
+
                                 <suite:MicroProcessFlowItem id="_IDGenMicroProcessFlowItem1" state="Warning" icon="sap-icon://accept" press="onMicroProcessItemPress" tooltip="Step 2: Send Back Request"/>
+
                                 <suite:MicroProcessFlowItem id="_IDGenMicroProcessFlowItem2" state="Success" icon="sap-icon://accept" press="onMicroProcessItemPress" tooltip="Step 3: Rejected Request"/>
+
                                 <suite:MicroProcessFlowItem id="_IDGenMicroProcessFlowItem3" state="Warning" icon="sap-icon://accept" press="onMicroProcessItemPress" tooltip="Step 4: In Progress Request"/>
+
                                 <suite:MicroProcessFlowItem id="_IDGenMicroProcessFlowItem4" state="Error" icon="sap-icon://accept" press="onMicroProcessItemPress" tooltip="Step 5: All Request"/>
+
                             </suite:content>
+
                         </suite:MicroProcessFlow>
                     </HBox>
                 </Toolbar>
@@ -46,11 +54,23 @@ UPDATE CODE
                                     <Label id="referenceNoLabel" text="Reference No:*"/>
                                     <Input id="referenceNoInput" value="{/request/referenceNo}"/>
                                     <Label id="divisionLabel" text="Division:*"/>
-                                    <Input id="divisionInput" value="{/request/division}"/>
+                                    <ComboBox
+                                        id="divisionComboBox"
+                                        items="{viewModel>/divisions}"
+                                        selectedKey="{/request/division}"
+                                        enabled="{/editable}">
+                                        <core:Item key="{viewModel>key}" text="{viewModel>text}"/>
+                                    </ComboBox>
                                     <Label id="dcnrFormLabel" text="DCNR# form:"/>
-                                    <Input id="dcnrFormInput" value="{/request/dcnrForm}"/>
+                                    <Input id="dcnrFormInput" value="{/request/dcnrFrom}"/>
                                     <Label id="standardReasonLabel" text="Standard Reason:"/>
-                                    <Input id="standardReasonInput" value="{/request/standardReason}"/>
+                                    <ComboBox
+                                        id="standardReasonComboBox"
+                                        items="{viewModel>/standardReasons}"
+                                        selectedKey="{/request/standardReason}"
+                                        enabled="{/editable}">
+                                        <core:Item key="{viewModel>key}" text="{viewModel>text}"/>
+                                    </ComboBox>
                                     <Label id="creatorCommentLabel" text="Comment by Creator:"/>
                                     <Input id="creatorCommentInput" value="{/request/creatorComment}"/>
                                 </VBox>
@@ -63,7 +83,13 @@ UPDATE CODE
                                     <Label id="statusLabel" text="Status of the Request:"/>
                                     <Text id="statusText" text="{/request/status}"/>
                                     <Label id="salesGroupLabel" text="Sales Group:"/>
-                                    <Input id="salesGroupInput" value="{/request/salesGroup}"/>
+                                    <ComboBox
+                                        id="salesGroupComboBox"
+                                        items="{viewModel>/salesGroups}"
+                                        selectedKey="{/request/salesGroup}"
+                                        enabled="{/editable}">
+                                        <core:Item key="{viewModel>key}" text="{viewModel>text}"/>
+                                    </ComboBox>
                                     <Label id="dcnrToLabel" text="DCNR% to:"/>
                                     <Input id="dcnrToInput" value="{/request/dcnrTo}"/>
                                 </VBox>
@@ -88,8 +114,8 @@ UPDATE CODE
                                         <ColumnListItem id="priceItem">
                                             <cells>
                                                 <Text id="materialCell" text="{material}"/>
-                                                <Text id="priceListCell" text="{priceList}"/>
-                                                <Text id="priceListDescCell" text="{priceListDescription}"/>
+                                                <Text id="priceListCell" text="{priceLot}"/>
+                                                <Text id="priceListDescCell" text="{priceLotDescription}"/>
                                                 <Text id="uomCell" text="{uom}"/>
                                                 <Text id="mrpCell" text="{indicativeMRP}"/>
                                                 <Text id="startDateCell" text="{startDate}"/>
@@ -128,7 +154,6 @@ UPDATE CODE
         </content>
     </Page>
 </mvc:View>
-
 
 
 
