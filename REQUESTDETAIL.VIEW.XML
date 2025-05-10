@@ -17,30 +17,22 @@ UPDATE CODE
                     <Toolbar id="requestDetailsToolbar">
                         <Title id="requestDetailsTitle" text="Request No: {/request/requestNo}"/>
                         <ToolbarSpacer id="requestDetailsSpacer"/>
-                        <Button id="saveButton" text="Save" press="onSaveRequest" type="Accept"/>
-                        <Button id="sendBackButton" text="Send Back" press="onSendBackRequest" type="Accept"/>
-                        <Button id="rejectButton" text="Reject" press="onRejectRequest" type="Reject"/>
-                        <Button id="approveButton" text="Approve" press="onApproveRequest" type="Accept"/>
+                        <Button id="saveButton" text="Save" press="onSaveRequest" type="Accept" enabled="{/editable}"/>
+                        <Button id="sendBackButton" text="Send Back" press="onSendBackRequest" type="Accept" enabled="{/editable}"/>
+                        <Button id="rejectButton" text="Reject" press="onRejectRequest" type="Reject" enabled="{/editable}"/>
+                        <Button id="approveButton" text="Approve" press="onApproveRequest" type="Accept" enabled="{/editable}"/>
                     </Toolbar>
                 </headerToolbar>
                 <Toolbar id="microProcessToolbar">
                     <HBox id="microProcessHBox" justifyContent="Center">
-                        <suite:MicroProcessFlow id="microProcessFlow">
-
-                            <suite:content>
-
-                                <suite:MicroProcessFlowItem id="_IDGenMicroProcessFlowItem" state="Success" icon="sap-icon://accept" press="onMicroProcessItemPress" tooltip="Step 1: My Draft Request"/>
-
-                                <suite:MicroProcessFlowItem id="_IDGenMicroProcessFlowItem1" state="Warning" icon="sap-icon://accept" press="onMicroProcessItemPress" tooltip="Step 2: Send Back Request"/>
-
-                                <suite:MicroProcessFlowItem id="_IDGenMicroProcessFlowItem2" state="Success" icon="sap-icon://accept" press="onMicroProcessItemPress" tooltip="Step 3: Rejected Request"/>
-
-                                <suite:MicroProcessFlowItem id="_IDGenMicroProcessFlowItem3" state="Warning" icon="sap-icon://accept" press="onMicroProcessItemPress" tooltip="Step 4: In Progress Request"/>
-
-                                <suite:MicroProcessFlowItem id="_IDGenMicroProcessFlowItem4" state="Error" icon="sap-icon://accept" press="onMicroProcessItemPress" tooltip="Step 5: All Request"/>
-
-                            </suite:content>
-
+                        <suite:MicroProcessFlow id="microProcessFlow" >
+                            <!-- <suite:items>
+                                <suite:MicroProcessFlowItem
+                                    state="{viewModel>state}"
+                                    icon="sap-icon://accept"
+                                    press="onMicroProcessItemPress"
+                                    tooltip="{viewModel>tooltip}"/>
+                            </suite:items> -->
                         </suite:MicroProcessFlow>
                     </HBox>
                 </Toolbar>
@@ -57,7 +49,7 @@ UPDATE CODE
                                     <ComboBox
                                         id="divisionComboBox"
                                         items="{viewModel>/divisions}"
-                                        selectedKey="{/request/division}"
+                                        selectedKey="{path: '/request/division', formatter: '.formatDivision'}"
                                         enabled="{/editable}">
                                         <core:Item key="{viewModel>key}" text="{viewModel>text}"/>
                                     </ComboBox>
@@ -67,7 +59,7 @@ UPDATE CODE
                                     <ComboBox
                                         id="standardReasonComboBox"
                                         items="{viewModel>/standardReasons}"
-                                        selectedKey="{/request/standardReason}"
+                                        selectedKey="{path: '/request/standardReason', formatter: '.formatStandardReason'}"
                                         enabled="{/editable}">
                                         <core:Item key="{viewModel>key}" text="{viewModel>text}"/>
                                     </ComboBox>
@@ -86,7 +78,7 @@ UPDATE CODE
                                     <ComboBox
                                         id="salesGroupComboBox"
                                         items="{viewModel>/salesGroups}"
-                                        selectedKey="{/request/salesGroup}"
+                                        selectedKey="{path: '/request/salesGroup', formatter: '.formatSalesGroup'}"
                                         enabled="{/editable}">
                                         <core:Item key="{viewModel>key}" text="{viewModel>text}"/>
                                     </ComboBox>
@@ -102,8 +94,8 @@ UPDATE CODE
                                 <Table id="priceDetailsTable" items="{/priceDetails}" width="100%">
                                     <columns>
                                         <Column id="materialColumn"><Text id="materialText" text="Material"/></Column>
-                                        <Column id="priceListColumn"><Text id="priceListText" text="Price List"/></Column>
-                                        <Column id="priceListDescColumn"><Text id="priceListDescText" text="Price List Description"/></Column>
+                                        <Column id="priceLotColumn"><Text id="priceLotText" text="Price Lot"/></Column>
+                                        <Column id="priceLotDescColumn"><Text id="priceLotDescText" text="Price Lot Description"/></Column>
                                         <Column id="uomColumn"><Text id="uomText" text="UoM"/></Column>
                                         <Column id="mrpColumn"><Text id="mrpText" text="Indicative MRP"/></Column>
                                         <Column id="startDateColumn"><Text id="startDateText" text="Start Date"/></Column>
@@ -114,8 +106,8 @@ UPDATE CODE
                                         <ColumnListItem id="priceItem">
                                             <cells>
                                                 <Text id="materialCell" text="{material}"/>
-                                                <Text id="priceListCell" text="{priceLot}"/>
-                                                <Text id="priceListDescCell" text="{priceLotDescription}"/>
+                                                <Text id="priceLotCell" text="{priceLot}"/>
+                                                <Text id="priceLotDescCell" text="{priceLotDescription}"/>
                                                 <Text id="uomCell" text="{uom}"/>
                                                 <Text id="mrpCell" text="{indicativeMRP}"/>
                                                 <Text id="startDateCell" text="{startDate}"/>
@@ -146,6 +138,22 @@ UPDATE CODE
                                             icon="sap-icon://employee-approvals"/>
                                     </suite:content>
                                 </suite:Timeline>
+                            </IconTabFilter>
+                            <IconTabFilter id="filesTab" text="Files" key="files">
+                                <Table id="filesTable" items="{viewModel>/uploadedFiles}" width="100%">
+                                    <columns>
+                                        <Column id="fileNameColumn"><Text id="fileNameText" text="File Name"/></Column>
+                                        <Column id="fileActionColumn"><Text id="fileActionText" text="Action"/></Column>
+                                    </columns>
+                                    <items>
+                                        <ColumnListItem id="fileItem">
+                                            <cells>
+                                                <Text id="fileNameCell" text="{viewModel>fileName}"/>
+                                                <Button id="downloadButton" text="Download" press="onDownloadFile" type="Default"/>
+                                            </cells>
+                                        </ColumnListItem>
+                                    </items>
+                                </Table>
                             </IconTabFilter>
                         </items>
                     </IconTabBar>
